@@ -1,0 +1,125 @@
+
+import React from 'react';
+
+interface Props {
+  time: string;
+  space: string;
+}
+
+type ComplexityRank = 'O(1)' | 'O(log n)' | 'O(n)' | 'O(n log n)' | 'O(n^2)' | 'O(2^n)' | 'O(?)';
+
+const getRank = (str: string): { rank: number; label: ComplexityRank; color: string; desc: string } => {
+  const s = str.toLowerCase().replace(/\s+/g, '');
+  if (s.includes('1')) return { rank: 1, label: 'O(1)', color: '#00ff00', desc: 'INSTANT' };
+  if (s.includes('logn') && !s.includes('nlogn')) return { rank: 2, label: 'O(log n)', color: '#ccff00', desc: 'FAST' };
+  if (s.includes('nlogn')) return { rank: 4, label: 'O(n log n)', color: '#ffaa00', desc: 'HEAVY' };
+  if (s.includes('n^2') || s.includes('n*n')) return { rank: 5, label: 'O(n^2)', color: '#ff3b3b', desc: 'SLOW' };
+  if (s.includes('2^n') || s.includes('n!')) return { rank: 6, label: 'O(2^n)', color: '#ff0000', desc: 'CRITICAL' };
+  if (s.includes('n')) return { rank: 3, label: 'O(n)', color: '#ffff00', desc: 'LINEAR' }; // Default to O(n) if just 'n'
+  return { rank: 0, label: 'O(?)', color: '#888', desc: 'UNKNOWN' };
+};
+
+const GraphView = ({ rank, color }: { rank: number; color: string }) => {
+  // Generate path based on complexity
+  const width = 100;
+  const height = 50;
+  let d = '';
+  
+  // Coordinate system: 0,0 is bottom-left (visually), so y needs inversion: y_svg = height - y_val
+  // x goes 0 to 100
+  
+  switch (rank) {
+    case 1: // O(1) - Flat line
+      d = `M 0 ${height-10} L 100 ${height-10}`;
+      break;
+    case 2: // O(log n) - Fast rise then plateau
+      d = `M 0 ${height} Q 10 ${height-30} 100 ${height-40}`;
+      break;
+    case 3: // O(n) - Linear
+      d = `M 0 ${height} L 100 0`;
+      break;
+    case 4: // O(n log n) - Slightly steeper linear
+      d = `M 0 ${height} Q 50 ${height-10} 100 0`;
+      break;
+    case 5: // O(n^2) - Quadratic
+      d = `M 0 ${height} Q 70 ${height} 100 0`;
+      break;
+    case 6: // O(2^n) - Exponential
+      d = `M 0 ${height} L 40 ${height} Q 80 ${height} 100 0`;
+      break;
+    default:
+      d = `M 0 ${height} L 100 ${height}`;
+  }
+
+  return (
+    <div className="relative h-16 w-full bg-[#0a0a0a] border border-[#333] mt-2 overflow-hidden rounded-sm">
+      {/* Grid */}
+      <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '10px 10px', opacity: 0.2 }}></div>
+      
+      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0">
+        <path d={d} fill="none" stroke={color} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        <path d={`${d} L 100 ${height} L 0 ${height} Z`} fill={color} fillOpacity="0.1" />
+      </svg>
+      
+      <div className="absolute top-1 right-1 text-[8px] font-mono text-gray-500">INPUT SIZE (N) →</div>
+    </div>
+  );
+};
+
+const ComplexityMeter = ({ label, value }: { label: string, value: string }) => {
+  const { rank, color, desc } = getRank(value);
+  const totalSegments = 6;
+
+  return (
+    <div className="flex-1 bg-[#141414] border border-[#333] p-4 rounded-sm relative group hover:border-[#FFD700] transition-colors">
+       <div className="flex justify-between items-center mb-2">
+          <span className="text-xs font-bold text-gray-400 font-mono uppercase tracking-wider">{label}</span>
+          <span className="text-xs font-bold font-mono px-2 py-0.5 rounded-sm bg-black border" style={{ borderColor: color, color: color }}>
+             {desc}
+          </span>
+       </div>
+       
+       <div className="flex items-end gap-2 mb-1">
+          <span className="text-xl font-bold text-white font-mono">{value}</span>
+       </div>
+
+       {/* Segmented Bar */}
+       <div className="flex gap-1 h-1.5 w-full mb-3">
+          {[...Array(totalSegments)].map((_, i) => (
+             <div 
+               key={i} 
+               className="flex-1 rounded-[1px] transition-all duration-500"
+               style={{ 
+                 backgroundColor: i < rank ? color : '#333',
+                 boxShadow: i < rank ? `0 0 5px ${color}40` : 'none'
+               }}
+             ></div>
+          ))}
+       </div>
+
+       <GraphView rank={rank} color={color} />
+    </div>
+  );
+};
+
+const ComplexityDashboard: React.FC<Props> = ({ time, space }) => {
+  return (
+    <div className="my-8">
+      <div className="flex items-center gap-2 mb-4 border-b border-[#333] pb-2">
+         <span className="text-xl">📊</span>
+         <h3 className="text-sm font-bold text-[#FFD700] uppercase tracking-widest">Resource Analysis</h3>
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-4">
+         <ComplexityMeter label="Time Complexity" value={time} />
+         <ComplexityMeter label="Space Complexity" value={space} />
+      </div>
+      
+      <div className="mt-2 text-[10px] text-gray-600 font-mono text-right uppercase">
+         Algorithm Performance Metrics // Generated by DSA-Forensics
+      </div>
+    </div>
+  );
+};
+
+export default ComplexityDashboard;

@@ -1,0 +1,5 @@
+{
+  "name": "AlgoSleuth",
+  "description": "An expert algorithm detective that investigates your code, uncovers complexities, and visualizes logic on an evidence board.",
+  "requestFramePermissions": []
+}
