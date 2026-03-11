@@ -1,4 +1,4 @@
-﻿import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { TutorSession } from "../types";
 import { saveCase, saveCaseMessage } from './evidence';
 
@@ -21,20 +21,6 @@ User will provide:
 
 ### CASE ANALYSIS: <Short investigation title>
 
-1️⃣ Detect
-- Programming Language
-- Algorithm / DSA Pattern
-- Bug presence or correctness
-
-2️⃣ Assign Investigation Status
-Use EXACTLY one:
-🟢 CASE CLOSED (Code correct OR optimal)
-🟡 UNDER INVESTIGATION (Logic mostly correct but improvement possible)
-🔴 CRITICAL BUG (Logic error, infinite loop, pointer issue, wrong complexity, or crash risk)
-
-3️⃣ Generate Case Metadata (FOR EVIDENCE STORAGE)
-Always include this block EXACTLY as shown:
-
 CASE REPORT:
 Case Title: <Algorithm or Bug Name>
 Primary Algorithm: <Detected DSA Concept>
@@ -43,7 +29,7 @@ Difficulty Level: <From UI>
 Investigation Status: <Status Icon> <Status Text>
 Risk Summary: <One sentence forensic summary>
 
-4️⃣ Investigation Notes (Main Explanation)
+## Investigation Notes (Main Explanation)
 Explain step-by-step:
 - What code is doing
 - Why it works or fails
@@ -55,7 +41,7 @@ Report depth rules:
 - If Report Depth = Short: concise summary (4-8 lines)
 - If Report Depth = Long: detailed walkthrough + edge cases
 
-5️⃣ Evidence Board (Algorithm Trace)
+## Evidence Board (Algorithm Trace)
 ONLY include this section if Algorithm Trace = ON.
 Visualize execution using ASCII diagrams:
 📍 for pointers / boundaries
@@ -67,7 +53,7 @@ Visualize ONLY what helps understanding
 No storytelling inside diagrams
 Keep visuals technical and clean
 
-6️⃣ Case Stats
+## Case Stats
 - Time Complexity: O(...)
 - Space Complexity: O(...)
 - Optimization Risk Level: Low / Medium / High
@@ -184,5 +170,6 @@ ${input}
     }
   }
 }
+
 
 

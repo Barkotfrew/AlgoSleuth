@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChatMessage } from '../types';
 import ComplexityDashboard from './ComplexityDashboard';
 
@@ -105,11 +105,12 @@ const extractCaseReportSegment = (value: string): { before: string; block: strin
   if (start < 0) {
     return null;
   }
-
   const tail = value.slice(start);
+
   const endOffset = findFirstIndex(tail, [
     /^\s*####\s*[4-9]\b/im,
-    /^\s*##\s*(?:Investigation Notes|Evidence Board|Case Stats|🧩Next Clue)\b/im,
+    /^\s*##\s*(?:Investigation Notes|Evidence Board|Case Stats|Next Clue)\b/im,
+    /^\s*Next Clue\b/im,
   ]);
 
   const end = endOffset >= 0 ? start + endOffset : value.length;
@@ -143,6 +144,32 @@ const extractStatsSegment = (value: string): { before: string; block: string; af
     after: value.slice(end),
   };
 };
+const extractEvidenceSegment = (value: string): { before: string; block: string; after: string } | null => {
+  const start = findFirstIndex(value, [
+    /^\s*####\s*5[^\n]*Evidence Board/im,
+    /^\s*##\s*.*Evidence Board/im,
+    /^\s*Evidence Board\b/im,
+  ]);
+
+  if (start < 0) {
+    return null;
+  }
+
+  const tail = value.slice(start);
+  const endOffset = findFirstIndex(tail, [
+    /^\s*####\s*[6-9]\b/im,
+    /^\s*##\s*(?:Case Stats|Next Clue)\b/im,
+    /^\s*(?:Case Stats|Next Clue)\b/im,
+  ]);
+  const end = endOffset >= 0 ? start + endOffset : value.length;
+
+  return {
+    before: value.slice(0, start),
+    block: value.slice(start, end),
+    after: value.slice(end),
+  };
+};
+
 
 const extractComplexity = (statsBlock: string): { time: string; space: string } | null => {
   const timeMatch = statsBlock.match(/Time Complexity\s*:\s*([^\n]+)/i);
@@ -164,14 +191,18 @@ const formatPartToHtml = (part: string): string => {
   return safe
     .replace(/^###\s*(?:[^\n]*?)CASE ANALYSIS:\s*(.*)$/gim, '<h2 class="text-2xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-4">CASE ANALYSIS: $1</h2>')
     .replace(/^####\s*2[^\n]*Investigation Status.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">2. Investigation Status</h3>')
-    .replace(/^####\s*4[^\n]*Investigation Notes.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">🧠Investigation Notes</h3>')
-    .replace(/^####\s*5[^\n]*Evidence Board.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">🧷Evidence Board (Algorithm Trace)</h3>')
-    .replace(/^####\s*6[^\n]*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">📊Case Stats</h3>')
+    .replace(/^####\s*4[^\n]*Investigation Notes.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Investigation Notes</h3>')
+    .replace(/^####\s*5[^\n]*Evidence Board.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Evidence Board (Algorithm Trace)</h3>')
+    .replace(/^##\s*.*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case Stats</h3>')
+    .replace(/^##\s*.*Next Clue.*$/gim, '<h3 class="text-xl font-bold text-[#FF3B3B] border-b-2 border-[#333] pb-3 mb-6 mt-10">Next Clue</h3>')
+    .replace(/^####\s*6[^\n]*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case Stats</h3>')
     .replace(/^##\s*.*CASE FILE.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case File</h3>')
     .replace(/^##\s*.*Investigation Notes.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Investigation Notes</h3>')
     .replace(/^##\s*.*Evidence Board.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Evidence Board (Algorithm Trace)</h3>')
-    .replace(/^##\s*.*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case Stats</h3>')
-    .replace(/^##\s*.*Next Clue.*$/gim, '<h3 class="text-xl font-bold text-[#FF3B3B] border-b-2 border-[#333] pb-3 mb-6 mt-10">🧩Next Clue</h3>')
+    .replace(/^\s*Investigation Notes.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Investigation Notes</h3>')
+    .replace(/^\s*Evidence Board.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Evidence Board (Algorithm Trace)</h3>')
+    .replace(/^\s*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case Stats</h3>')
+    .replace(/^\s*Next Clue.*$/gim, '<h3 class="text-xl font-bold text-[#FF3B3B] border-b-2 border-[#333] pb-3 mb-6 mt-10">Next Clue</h3>')
     .replace(/^\s*[-*]\s+/gm, '<span class="text-[#FF3B3B] mr-2 inline-block font-bold">&gt;</span>')
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold bg-[#FFD700]/10 px-1 rounded-sm">$1</strong>')
     .replace(/`([^`]+)`/g, '<code class="text-[#FFD700] bg-[#1a1a1a] px-1 rounded">$1</code>')
@@ -283,6 +314,28 @@ const renderFormattedText = (text: string, onSuggestionClick?: (text: string) =>
       }
 
       nodes.push(...renderTextChunk(caseSegment.after));
+      return nodes;
+    }
+
+    const evidenceSegment = extractEvidenceSegment(chunk);
+    if (evidenceSegment) {
+      const nodes: React.ReactNode[] = [];
+
+      nodes.push(...renderTextChunk(evidenceSegment.before));
+
+      const headingMatch = evidenceSegment.block.match(/^[^\n]*Evidence Board[^\n]*/im);
+      const headingLine = headingMatch?.[0] ?? 'Evidence Board (Algorithm Trace)';
+      const body = evidenceSegment.block.replace(headingLine, '').replace(/^\s*[\r\n]+/, '').trim();
+
+      nodes.push(
+        <div key={nextKey('evidence-heading')} dangerouslySetInnerHTML={{ __html: formatPartToHtml(headingLine) }} />
+      );
+
+      if (body) {
+        nodes.push(<CodeBlock key={nextKey('evidence-block')} code={body} />);
+      }
+
+      nodes.push(...renderTextChunk(evidenceSegment.after));
       return nodes;
     }
 
@@ -445,4 +498,7 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
 };
 
 export default ChatMessageList;
+
+
+
 

@@ -551,6 +551,11 @@ const App: React.FC = () => {
       setShowAuthGate(true);
       return;
     }
+
+    setActiveTab('CRIME SCENE');
+    setIsTyping(true);
+    setSessionStarted(true);
+    setMessages([]);
     setInputData(evidence.code);
     setActiveCaseId(evidence.caseId);
     tutorServiceRef.current = null;
@@ -579,9 +584,9 @@ const App: React.FC = () => {
       console.error('Failed to load case conversation:', error);
       setMessages([]);
       setSessionStarted(false);
+    } finally {
+      setIsTyping(false);
     }
-
-    setActiveTab('CRIME SCENE');
   };
 
   const reset = () => {
