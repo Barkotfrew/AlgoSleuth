@@ -13,7 +13,7 @@
     "types": [
       "vite/client"
     ],
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
@@ -28,11 +28,14 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
     "noEmit": true
-
   },
-"include": [
-    "src",
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
     "env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }
-

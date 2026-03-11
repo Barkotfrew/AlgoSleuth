@@ -1,12 +1,15 @@
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+﻿import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { TutorSession } from "../types";
+import { saveCase, saveCaseMessage } from './evidence';
 
-const SYSTEM_INSTRUCTION = `You are DSA Detective AI, an elite algorithm investigation system.
+const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
 
-Your job is to analyze user-submitted DSA code and produce structured forensic investigation output that can be saved in Evidence history.
+const SYSTEM_INSTRUCTION = `You are DSA Detective AI, an elite Cyber Investigation Unit for algorithms.
 
-This system supports ALL DSA topics including:
-Arrays, Hashing, Two Pointers, Sliding Window, Stack, Queue, Linked List, Trees, Graphs, Heap, Greedy, Dynamic Programming, Recursion, Backtracking, Sorting, Searching, and more.
+Your output must be clean, readable, and visually structured in markdown.
+Do not output placeholder values like "Unknown".
+Never use blockquote markers (no leading '>').
+Do not add extra sections outside this structure.
 
 🔎 INPUT YOU WILL RECEIVE
 User will provide:
@@ -15,7 +18,8 @@ User will provide:
 - Algorithm Trace (ON / OFF)
 - Explanation Depth (Short / Detailed)
 
-🧠 YOUR TASKS
+
+### CASE ANALYSIS: <Short investigation title>
 
 1️⃣ Detect
 - Programming Language
@@ -47,6 +51,9 @@ Explain step-by-step:
 - Optimization opportunities
 
 Match explanation depth to dropdown.
+Report depth rules:
+- If Report Depth = Short: concise summary (4-8 lines)
+- If Report Depth = Long: detailed walkthrough + edge cases
 
 5️⃣ Evidence Board (Algorithm Trace)
 ONLY include this section if Algorithm Trace = ON.
@@ -67,66 +74,115 @@ Keep visuals technical and clean
 
 ## 🧩 Next Clue
 End with ONE short interactive question or mini practice task.
-`;
+
+Style rules:
+- Keep wording concise and technical.
+- Keep field names exactly as written in CASE REPORT.
+- Use markdown lists, not tables.
+- No disclaimers about being an AI model.`;
 
 export class DSATutorService {
   private chat: Chat | null = null;
   private ai: GoogleGenAI;
+  private activeCaseId: string | null = null;
 
   constructor() {
-    this.ai = new GoogleGenAI({ 
-  apiKey: import.meta.env.VITE_GEMINI_API_KEY 
-});
+    this.ai = new GoogleGenAI({
+      apiKey: import.meta.env.VITE_GEMINI_API_KEY,
+    });
   }
+
   async startSession(session: TutorSession): Promise<string> {
     const { input, level, visualization, detail } = session;
-    // Using gemini-3-flash-preview to prevent 429 Resource Exhausted errors
+
     this.chat = this.ai.chats.create({
-      model: 'gemini-3-flash-preview', 
+      model: GEMINI_MODEL,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
       },
     });
 
-    // Provide the parameters clearly to the model so it can follow instructions
     const prompt = `
-    [CODE SNIPPET START]
-    ${input}
-    [CODE SNIPPET END]
+[CODE SNIPPET START]
+${input}
+[CODE SNIPPET END]
 
-    [UI INPUTS]
-    - Experience Level: ${level}
-    - Algorithm Trace: ${visualization === 'Show Visualization' ? 'ON' : 'OFF'}
-    - Report Depth: ${detail === 'Long' ? 'Detailed' : 'Short'}
-    `;
+[UI INPUTS]
+- Experience Level: ${level}
+- Algorithm Trace: ${visualization === 'Show Visualization' ? 'ON' : 'OFF'}
+- Report Depth: ${detail === 'Long' ? 'Long' : 'Short'}
+`;
 
     const response = await this.chat.sendMessage({ message: prompt });
-    return response.text || "Investigation inconclusive. No data returned.";
+    const aiResponseText = response.text || "Investigation inconclusive. No data returned.";
+
+    try {
+      const savedCase = await saveCase({
+        code: input,
+        ai_response: aiResponseText,
+        level,
+        visualization,
+        detail,
+      });
+
+      this.activeCaseId = savedCase.id;
+
+      await saveCaseMessage({
+        case_id: savedCase.id,
+        role: 'user',
+        text: input,
+        is_initial: true,
+      });
+
+      await saveCaseMessage({
+        case_id: savedCase.id,
+        role: 'model',
+        text: aiResponseText,
+      });
+    } catch (storageError) {
+      console.error('Failed to persist case evidence:', storageError);
+    }
+
+    return aiResponseText;
   }
 
   async resumeSession(historyMessages: { role: 'user' | 'model'; text: string }[]) {
-    const history = historyMessages.map(msg => ({
+    const history = historyMessages.map((msg) => ({
       role: msg.role,
-      parts: [{ text: msg.text }]
+      parts: [{ text: msg.text }],
     }));
 
     this.chat = this.ai.chats.create({
-      model: 'gemini-3-flash-preview',
+      model: GEMINI_MODEL,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
       },
-      history: history
+      history,
     });
   }
 
+  hasActiveSession() {
+    return this.chat !== null;
+  }
+
+  getActiveCaseId() {
+    return this.activeCaseId;
+  }
+
+  setActiveCaseId(caseId: string | null) {
+    this.activeCaseId = caseId;
+  }
+
   async sendMessageStream(message: string, onChunk: (text: string) => void) {
-      if (!this.chat) throw new Error("No active session");
-      const stream = await this.chat.sendMessageStream({ message });
-      let fullText = "";
-      for await (const chunk of stream) {
-          const c = chunk as GenerateContentResponse;
-          fullText += c.text;
-          onChunk(fullText);
-      }
+    if (!this.chat) throw new Error('No active session');
+    const stream = await this.chat.sendMessageStream({ message });
+    let fullText = '';
+    for await (const chunk of stream) {
+      const c = chunk as GenerateContentResponse;
+      fullText += c.text;
+      onChunk(fullText);
+    }
   }
 }
+
+
