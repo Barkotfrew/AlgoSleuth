@@ -219,22 +219,22 @@ const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
   };
 
   return (
-    <div className="my-6 bg-black rounded-sm border border-[#333] overflow-hidden relative group shadow-lg transition-all hover:border-[#FFD700]/50 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]">
+    <div className="my-6 w-full bg-black rounded-sm border border-[#333] overflow-hidden relative group shadow-lg transition-all hover:border-[#FFD700]/50 hover:shadow-[0_0_15px_rgba(255,215,0,0.1)]">
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-50" />
-      <div className="flex justify-between items-center px-4 py-2 bg-[#141414] border-b border-[#333]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-2 sm:px-4 py-2 bg-[#141414] border-b border-[#333]">
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#333] group-hover:bg-[#FF3B3B] transition-colors" />
           <div className="w-2.5 h-2.5 rounded-full bg-[#333] group-hover:bg-[#FFD700] transition-colors delay-75" />
           <div className="w-2.5 h-2.5 rounded-full bg-[#333] group-hover:bg-[#00ff00] transition-colors delay-150" />
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[9px] text-[#FFD700] uppercase tracking-widest border border-[#FFD700] px-1.5 rounded-sm">Evidence Block</span>
-          <button onClick={handleCopy} className="text-[10px] text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+          <span className="text-[8px] sm:text-[9px] text-[#FFD700] uppercase tracking-widest border border-[#FFD700] px-1.5 rounded-sm">Evidence Block</span>
+          <button onClick={handleCopy} className="text-[8px] sm:text-[10px] text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
             {copied ? <span className="text-green-400 font-bold">Copied</span> : 'Copy'}
           </button>
         </div>
       </div>
-      <pre className="p-5 overflow-x-auto text-xs md:text-sm code-font text-[#e0e0e0] leading-relaxed custom-scrollbar">
+      <pre className="p-3 sm:p-5 overflow-x-auto text-[10px] sm:text-[11px] md:text-xs lg:text-sm code-font text-[#e0e0e0] leading-relaxed custom-scrollbar">
         <code>{code}</code>
       </pre>
     </div>
@@ -417,7 +417,7 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
   }, [messages, isTyping]);
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#050505] p-4 md:p-6 custom-scrollbar relative">
+    <div ref={scrollRef} className="flex-1 overflow-y-auto bg-[#050505] p-3 sm:p-4 md:p-6 custom-scrollbar relative">
       <div
         className="absolute inset-0 opacity-5 pointer-events-none z-0"
         style={{
@@ -426,17 +426,17 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
         }}
       />
 
-      <div className="max-w-6xl mx-auto space-y-8 relative z-10">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 relative z-10">
         {messages.map((msg, index) => {
           const isModel = msg.role === 'model';
 
           return (
             <div
               key={`${msg.role}-${index}-${msg.text.length}`}
-              className={`flex gap-4 md:gap-6 ${isModel ? 'flex-row' : 'flex-row-reverse'} animate-in fade-in slide-in-from-bottom-4 duration-500 group`}
+              className={`flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 ${isModel ? 'sm:flex-row' : 'sm:flex-row-reverse'} animate-in fade-in slide-in-from-bottom-4 duration-500 group`}
             >
               <div
-                className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 mt-1 rounded-sm flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden ${
+                className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 mt-1 rounded-sm flex items-center justify-center border-2 transition-all duration-300 relative overflow-hidden ${
                   isModel
                     ? 'bg-[#1a1a1a] border-[#FF3B3B] shadow-[0_0_15px_rgba(255,59,59,0.3)] text-xs font-bold group-hover:scale-105'
                     : 'bg-[#FFD700] border-[#FFD700] text-black text-[10px] font-bold tracking-tighter'
@@ -458,12 +458,12 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
                       </span>
                     </div>
 
-                    <div className="prose prose-invert prose-sm md:prose-base max-w-none leading-relaxed text-gray-300">
+                    <div className="prose prose-invert prose-xs sm:prose-sm md:prose-base max-w-none leading-relaxed text-gray-300">
                       {renderFormattedText(normalizeMojibake(msg.text), onSuggestionClick)}
                     </div>
                   </div>
                 ) : (
-                  <div className="max-w-[85%] bg-[#1a1a1a] text-[#FFD700] px-6 py-4 rounded-sm border-r-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.15)] font-mono text-sm whitespace-pre-wrap text-left relative transition-transform hover:-translate-x-1 duration-300">
+                  <div className="max-w-full sm:max-w-[85%] bg-[#1a1a1a] text-[#FFD700] px-4 sm:px-6 py-3 sm:py-4 rounded-sm border-r-2 border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.15)] font-mono text-xs sm:text-sm whitespace-pre-wrap text-left relative transition-transform hover:-translate-x-1 duration-300">
                     <div className="absolute top-0 right-0 -mr-[2px] w-[2px] h-full bg-[#FFD700] opacity-50" />
                     <div className="absolute -left-1 top-4 w-1 h-4 bg-[#FFD700]" />
                     {normalizeMojibake(msg.text)}
@@ -475,12 +475,12 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
         })}
 
         {isTyping && (
-          <div className="flex gap-4 md:gap-6 flex-row animate-in fade-in duration-300">
-            <div className="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 mt-1 rounded-sm bg-[#1a1a1a] border border-[#FF3B3B] flex items-center justify-center text-xl shadow-[0_0_15px_rgba(255,59,59,0.3)]">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-6 animate-in fade-in duration-300">
+            <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 mt-1 rounded-sm bg-[#1a1a1a] border border-[#FF3B3B] flex items-center justify-center text-lg sm:text-xl shadow-[0_0_15px_rgba(255,59,59,0.3)]">
               <span className="animate-pulse">...</span>
             </div>
             <div className="flex items-center h-12">
-              <div className="flex gap-1.5 px-6 py-3 bg-[#1a1a1a]/50 border-l-2 border-[#FF3B3B] rounded-sm relative overflow-hidden">
+              <div className="flex gap-1.5 px-4 sm:px-6 py-2 sm:py-3 bg-[#1a1a1a]/50 border-l-2 border-[#FF3B3B] rounded-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#FF3B3B]/10 to-transparent animate-[shimmer_2s_infinite]" />
                 <span className="w-2 h-2 bg-[#FF3B3B] rounded-full animate-[bounce_1s_infinite_0ms]" />
                 <span className="w-2 h-2 bg-[#FF3B3B] rounded-full animate-[bounce_1s_infinite_200ms]" />
@@ -498,6 +498,11 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
 };
 
 export default ChatMessageList;
+
+
+
+
+
 
 
 

@@ -158,7 +158,7 @@ const BootScreen = ({ onComplete }: { onComplete: () => void }) => {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center text-[#00ff00] font-mono p-10">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center text-[#00ff00] font-mono p-6 sm:p-10">
       <div className="w-full max-w-lg space-y-2">
         {logs.map((log, i) => (
           <div key={i} className="typewriter overflow-hidden whitespace-nowrap border-r-2 border-[#00ff00] animate-pulse">
@@ -601,7 +601,7 @@ const App: React.FC = () => {
 
   if (isAuthLoading) {
     return (
-      <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center text-[#00ff00] font-mono p-10">
+      <div className="fixed inset-0 bg-black z-[100] flex flex-col justify-center items-center text-[#00ff00] font-mono p-6 sm:p-10">
         <p className="text-sm uppercase tracking-[0.3em] text-[#FFD700] animate-pulse">Authenticating Secure Channel...</p>
       </div>
     );
@@ -710,34 +710,34 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <header className="flex items-center justify-between px-6 py-4 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-[#333] shrink-0 z-40 relative">
+      <header className="hidden sm:flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-4 sm:px-6 py-4 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-[#333] shrink-0 z-40 relative">
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-50"></div>
 
-        <div className="flex items-center gap-4">
-          <div className="relative w-12 h-12 flex items-center justify-center bg-[#1a1a1a] rounded-sm border border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] overflow-hidden">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[#1a1a1a] rounded-sm border border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] overflow-hidden">
             <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0_340deg,rgba(255,215,0,0.5)_360deg)] animate-[spin_4s_linear_infinite] rounded-full opacity-50"></div>
             <div className="absolute inset-0 rounded-full border border-[#FFD700] opacity-30 scale-75"></div>
-            <span className="text-2xl relative z-10">??????</span>
+            <span className="text-xl sm:text-2xl relative z-10">??????</span>
           </div>
           <div>
-            <h1 className="font-bold text-2xl text-[#FFD700] tracking-[0.2em] font-mono uppercase">CASE #DSA</h1>
+            <h1 className="font-bold text-xl sm:text-2xl text-[#FFD700] tracking-[0.15em] sm:tracking-[0.2em] font-mono uppercase">CASE #DSA</h1>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex gap-0.5">
                 <div className="w-1 h-3 bg-[#FF3B3B] animate-pulse"></div>
                 <div className="w-1 h-2 bg-[#FF3B3B] animate-pulse delay-75"></div>
                 <div className="w-1 h-4 bg-[#FF3B3B] animate-pulse delay-150"></div>
               </div>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">LIVE FEED // SECURE</p>
+              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">LIVE FEED // SECURE</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 md:gap-4">
+        <div className="flex w-full md:w-auto flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
           {sessionStarted && (
-            <button onClick={reset} className="group relative px-6 py-2 bg-transparent overflow-hidden rounded-sm">
+            <button onClick={reset} className="group relative w-full sm:w-auto px-4 sm:px-6 py-2 bg-transparent overflow-hidden rounded-sm">
               <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-[#FFD700]/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <div className="absolute inset-0 border border-[#FFD700] opacity-50 group-hover:opacity-100 transition-opacity"></div>
-              <span className="relative text-xs font-bold text-[#FFD700] uppercase tracking-wider font-mono">New Case</span>
+              <span className="relative text-[10px] sm:text-xs font-bold text-[#FFD700] uppercase tracking-wider font-mono">New Case</span>
             </button>
           )}
 
@@ -760,7 +760,7 @@ const App: React.FC = () => {
           </div>
 
           {user ? (
-            <LogoutButton className="rounded-sm border border-[#333] px-4 py-2 text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] disabled:opacity-50">
+            <LogoutButton className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] disabled:opacity-50">
               Logout
             </LogoutButton>
           ) : (
@@ -769,7 +769,7 @@ const App: React.FC = () => {
                 setAuthView('login');
                 setShowAuthGate(true);
               }}
-              className="rounded-sm border border-[#333] px-4 py-2 text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700]"
+              className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700]"
             >
               Login
             </button>
@@ -813,7 +813,7 @@ const App: React.FC = () => {
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-6 py-3 font-mono text-sm font-bold tracking-widest cursor-pointer transition-all border-b-2 whitespace-nowrap relative group ${
+                    className={`px-4 sm:px-6 py-2 sm:py-3 font-mono text-xs sm:text-sm font-bold tracking-widest cursor-pointer transition-all border-b-2 whitespace-nowrap relative group ${
                       activeTab === tab
                         ? 'text-[#FFD700] border-[#FFD700] bg-[#1a1a1a]'
                         : 'text-gray-500 border-transparent hover:text-gray-300 hover:bg-[#1a1a1a]/50'
@@ -843,7 +843,7 @@ const App: React.FC = () => {
                           value={inputData}
                           onChange={(e) => setInputData(e.target.value)}
                           placeholder="// PASTE SUSPECT CODE HERE FOR FORENSIC ANALYSIS..."
-                          className="w-full h-96 p-8 bg-[#0a0a0a] text-[#00ff00] font-mono text-sm outline-none resize-none placeholder-gray-700 leading-relaxed border-none focus:ring-0 custom-scrollbar"
+                          className="w-full h-64 sm:h-80 lg:h-96 p-4 sm:p-6 lg:p-8 bg-[#0a0a0a] text-[#00ff00] font-mono text-xs sm:text-sm outline-none resize-none placeholder-gray-700 leading-relaxed border-none focus:ring-0 custom-scrollbar"
                           spellCheck="false"
                         />
                       </div>
@@ -857,7 +857,7 @@ const App: React.FC = () => {
                       </h2>
                     </div>
 
-                    <div className="bg-[#141414]/80 backdrop-blur border border-[#333] p-6 space-y-6 relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+                    <div className="bg-[#141414]/80 backdrop-blur border border-[#333] p-4 sm:p-6 space-y-6 relative shadow-[0_0_20px_rgba(0,0,0,0.5)]">
                       <div className="space-y-3 relative z-10">
                         <label className="text-[10px] uppercase tracking-widest text-[#FF3B3B] font-bold">Expertise Level</label>
                         <div className="grid grid-cols-2 gap-2">
@@ -907,7 +907,7 @@ const App: React.FC = () => {
                       <button
                         onClick={startInvestigation}
                         disabled={!inputData.trim() || isTyping || guestLocked}
-                        className="w-full py-5 bg-[#FF3B3B] text-white font-bold tracking-[0.2em] uppercase text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-full py-4 sm:py-5 bg-[#FF3B3B] text-white font-bold tracking-[0.2em] uppercase text-xs sm:text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         INITIATE SCAN 
                       </button>
@@ -952,7 +952,7 @@ const App: React.FC = () => {
                         <div
                           key={file.id}
                           onClick={() => void loadEvidence(file)}
-                          className="bg-[#141414] border border-[#333] p-6 hover:border-[#FFD700] hover:bg-[#1a1a1a] transition-all cursor-pointer group relative overflow-hidden transform hover:-translate-y-1 hover:shadow-[0_5px_20px_rgba(0,0,0,0.5)]"
+                          className="bg-[#141414] border border-[#333] p-4 sm:p-6 hover:border-[#FFD700] hover:bg-[#1a1a1a] transition-all cursor-pointer group relative overflow-hidden transform hover:-translate-y-1 hover:shadow-[0_5px_20px_rgba(0,0,0,0.5)]"
                         >
                           <div className="absolute top-0 right-0 p-2 opacity-30 group-hover:opacity-100 transition-opacity">
                             <span className="text-xs font-mono text-[#FFD700]">??</span>
@@ -992,7 +992,7 @@ const App: React.FC = () => {
                         <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#050505] border-2 ${item.status === 'SOLVED' ? 'border-green-500 bg-green-500/20' : item.status === 'IN PROGRESS' ? 'border-[#FFD700] animate-pulse' : 'border-[#333]'}`}></div>
 
                         <div
-                          className={`bg-[#141414] border p-6 rounded-sm relative overflow-hidden transition-all duration-300 hover:translate-x-2 ${
+                          className={`bg-[#141414] border p-4 sm:p-6 rounded-sm relative overflow-hidden transition-all duration-300 hover:translate-x-2 ${
                             item.status === 'LOCKED' ? 'border-[#333] opacity-50' : `${item.borderClass} ${item.hoverClass}`
                           }`}
                         >
@@ -1016,7 +1016,7 @@ const App: React.FC = () => {
           <div className="flex-1 flex flex-col min-h-0 relative z-20">
             <ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
 
-            <div className="p-6 bg-[#0a0a0a] border-t border-[#333] z-30">
+            <div className="p-4 sm:p-6 bg-[#0a0a0a] border-t border-[#333] z-30">
               {!user && guestLocked && (
                 <div className="max-w-6xl mx-auto mb-4 border border-[#FF3B3B] bg-[#2a0d0d] px-4 py-3 text-xs font-mono text-red-200 flex flex-wrap items-center justify-between gap-3">
                   <span>Guest trial limit reached. Login to continue this investigation thread.</span>
@@ -1032,7 +1032,7 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              <form onSubmit={handleFormSubmit} className="max-w-6xl mx-auto flex gap-4">
+              <form onSubmit={handleFormSubmit} className="max-w-6xl mx-auto flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="flex-1 relative group">
                   <div className="absolute -inset-[1px] bg-gradient-to-r from-[#FF3B3B] to-[#FFD700] rounded-sm opacity-50 group-hover:opacity-100 transition duration-500 blur-[2px]"></div>
                   <input
@@ -1040,13 +1040,13 @@ const App: React.FC = () => {
                     value={followUpInput}
                     onChange={(e) => setFollowUpInput(e.target.value)}
                     placeholder="Enter command or query..."
-                    className="relative w-full p-4 rounded-sm bg-[#050505] border border-[#333] text-[#e0e0e0] focus:text-white outline-none transition-all text-sm font-mono placeholder-gray-600 shadow-inner"
+                    className="relative w-full p-3 sm:p-4 rounded-sm bg-[#050505] border border-[#333] text-[#e0e0e0] focus:text-white outline-none transition-all text-xs sm:text-sm font-mono placeholder-gray-600 shadow-inner"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!followUpInput.trim() || isTyping || guestLocked}
-                  className="bg-[#FFD700] text-black font-bold px-8 rounded-sm hover:bg-[#ffe033] disabled:bg-[#333] disabled:text-gray-600 transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:shadow-[0_0_25px_rgba(255,215,0,0.6)] uppercase tracking-wider text-sm flex items-center gap-2 group"
+                  className="bg-[#FFD700] text-black font-bold w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 rounded-sm hover:bg-[#ffe033] disabled:bg-[#333] disabled:text-gray-600 transition-all shadow-[0_0_15px_rgba(255,215,0,0.3)] hover:shadow-[0_0_25px_rgba(255,215,0,0.6)] uppercase tracking-wider text-xs sm:text-sm flex items-center justify-center gap-2 group"
                 >
                   <span>Transmit</span>
                   <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1063,3 +1063,7 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
