@@ -1014,6 +1014,14 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 relative z-20">
+            <div className="sm:hidden px-4 py-3 bg-[#0a0a0a] border-b border-[#333]">
+              <button
+                onClick={reset}
+                className="w-full border border-[#FFD700] text-[#FFD700] uppercase tracking-wider text-[10px] font-mono py-2"
+              >
+                Back to Main
+              </button>
+            </div>
             <ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
 
             <div className="p-4 sm:p-6 bg-[#0a0a0a] border-t border-[#333] z-30">
@@ -1063,6 +1071,7 @@ const App: React.FC = () => {
 };
 
 export default App;
+
 
 
 
