@@ -1,4 +1,4 @@
-﻿
+
 import React, { useState, useRef, useEffect } from 'react';
 import { TutorSession, ChatMessage, ExperienceLevel, VisualizationPreference, DetailPreference } from './types';
 import { DSATutorService } from './services/DSATutorService';
@@ -358,8 +358,7 @@ const App: React.FC = () => {
 
     try {
       if (!user) {
-        const guestCases = readGuestCases().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        setEvidenceFiles(guestCases.map((record, index) => mapCaseToEvidenceFile(record as CaseRecord, index)));
+        setEvidenceFiles([]);
         return;
       }
 
@@ -547,6 +546,11 @@ const App: React.FC = () => {
   };
 
   const loadEvidence = async (evidence: EvidenceFile) => {
+    if (!user) {
+      setAuthView('login');
+      setShowAuthGate(true);
+      return;
+    }
     setInputData(evidence.code);
     setActiveCaseId(evidence.caseId);
     tutorServiceRef.current = null;
@@ -909,21 +913,35 @@ const App: React.FC = () => {
 
               {activeTab === 'EVIDENCE' && (
                 <div className="space-y-4">
-                  {isEvidenceLoading && (
+                  {!user && (
+                    <div className="bg-[#141414] border border-[#333] p-6 text-sm font-mono text-gray-400">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span>Login required to access evidence history.</span>
+                        <button
+                          onClick={() => {
+                            setAuthView('login');
+                            setShowAuthGate(true);
+                          }}
+                          className="border border-[#FFD700] px-3 py-1 uppercase tracking-wider text-[#FFD700] hover:bg-[#FFD700]/10"
+                        >
+                          Login / Sign up
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {user && isEvidenceLoading && (
                     <div className="bg-[#141414] border border-[#333] p-6 text-sm font-mono text-gray-400">
                       Loading evidence records...
                     </div>
                   )}
 
-                  {!isEvidenceLoading && evidenceFiles.length === 0 && (
+                  {user && !isEvidenceLoading && evidenceFiles.length === 0 && (
                     <div className="bg-[#141414] border border-[#333] p-6 text-sm font-mono text-gray-400">
-                      {user
-                        ? 'No stored cases found yet. Start an investigation to generate your first evidence record.'
-                        : 'No local guest cases yet. Run an investigation to build local history.'}
+                      No stored cases found yet. Start an investigation to generate your first evidence record.
                     </div>
                   )}
 
-                  {!isEvidenceLoading && evidenceFiles.length > 0 && (
+                  {user && !isEvidenceLoading && evidenceFiles.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {evidenceFiles.map((file) => (
                         <div
