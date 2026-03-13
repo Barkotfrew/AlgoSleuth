@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { TutorSession, ChatMessage, ExperienceLevel, VisualizationPreference, DetailPreference } from './types';
+import { TutorSession, ChatMessage, ExperienceLevel, VisualizationPreference, DetailPreference, AppearanceSettings, ThemePreference, FontSizePreference, AccentColorPreference } from './types';
 import { DSATutorService } from './services/DSATutorService';
 import ChatMessageList from './components/ChatMessageList';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import LogoutButton from './components/LogoutButton';
 import SettingsModal from './components/SettingsModal';
-import { loadCases, loadCaseMessages, saveCaseMessage, CaseRecord, CaseMessageRecord } from './services/evidence';
+import { loadCases, loadCaseMessages, saveCaseMessage, clearEvidenceHistory, CaseRecord, CaseMessageRecord } from './services/evidence';
 import { useAuth } from './contexts/AuthContext';
 
 interface EvidenceFile {
@@ -34,6 +34,107 @@ interface GuestCaseRecord {
 const GUEST_CASES_KEY = 'dsa_guest_cases';
 const GUEST_USAGE_KEY = 'dsa_guest_usage_count';
 const GUEST_TRY_LIMIT = 5;
+const APPEARANCE_STORAGE_KEY = 'algosleuth_appearance';
+
+const DEFAULT_APPEARANCE: AppearanceSettings = {
+  theme: 'Dark',
+  fontSize: 'Medium',
+  accent: 'Yellow',
+};
+
+const THEME_VALUES: ThemePreference[] = ['Dark', 'Light', 'System'];
+const FONT_VALUES: FontSizePreference[] = ['Small', 'Medium', 'Large'];
+const ACCENT_VALUES: AccentColorPreference[] = ['Yellow', 'Green', 'Red', 'Cyan', 'Purple'];
+
+const THEME_TOKENS: Record<'dark' | 'light', { bg: string; surface: string; surfaceAlt: string; text: string; textMuted: string; border: string }> = {
+  dark: {
+    bg: '#050505',
+    surface: '#0a0a0a',
+    surfaceAlt: '#141414',
+    text: '#e0e0e0',
+    textMuted: '#9ca3af',
+    border: '#333',
+  },
+  light: {
+    bg: '#f5f5f5',
+    surface: '#ffffff',
+    surfaceAlt: '#f0f0f0',
+    text: '#1f2937',
+    textMuted: '#4b5563',
+    border: '#d4d4d8',
+  },
+};
+
+const ACCENT_TOKENS: Record<AccentColorPreference, { color: string; soft: string }> = {
+  Yellow: { color: '#FFD700', soft: 'rgba(255, 215, 0, 0.2)' },
+  Green: { color: '#34D399', soft: 'rgba(52, 211, 153, 0.2)' },
+  Red: { color: '#FF3B3B', soft: 'rgba(255, 59, 59, 0.2)' },
+  Cyan: { color: '#22D3EE', soft: 'rgba(34, 211, 238, 0.2)' },
+  Purple: { color: '#A855F7', soft: 'rgba(168, 85, 247, 0.2)' },
+};
+
+const FONT_SIZES: Record<FontSizePreference, string> = {
+  Small: '14px',
+  Medium: '16px',
+  Large: '18px',
+};
+
+const sanitizeAppearance = (input: Partial<AppearanceSettings> | null | undefined): AppearanceSettings => {
+  const theme = input?.theme && THEME_VALUES.includes(input.theme) ? input.theme : DEFAULT_APPEARANCE.theme;
+  const fontSize = input?.fontSize && FONT_VALUES.includes(input.fontSize) ? input.fontSize : DEFAULT_APPEARANCE.fontSize;
+  const accent = input?.accent && ACCENT_VALUES.includes(input.accent) ? input.accent : DEFAULT_APPEARANCE.accent;
+  return { theme, fontSize, accent };
+};
+
+const resolveThemePreference = (theme: ThemePreference): 'dark' | 'light' => {
+  if (theme === 'System') {
+    if (typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'dark';
+  }
+  return theme === 'Light' ? 'light' : 'dark';
+};
+
+const applyAppearanceSettings = (settings: AppearanceSettings): void => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const resolvedTheme = resolveThemePreference(settings.theme);
+  const themeTokens = THEME_TOKENS[resolvedTheme];
+  const accentTokens = ACCENT_TOKENS[settings.accent];
+  const root = document.documentElement;
+
+  root.dataset.theme = resolvedTheme;
+  root.style.setProperty('--app-bg', themeTokens.bg);
+  root.style.setProperty('--app-surface', themeTokens.surface);
+  root.style.setProperty('--app-surface-alt', themeTokens.surfaceAlt);
+  root.style.setProperty('--app-text', themeTokens.text);
+  root.style.setProperty('--app-text-muted', themeTokens.textMuted);
+  root.style.setProperty('--app-border', themeTokens.border);
+  root.style.setProperty('--accent-color', accentTokens.color);
+  root.style.setProperty('--accent-soft', accentTokens.soft);
+  root.style.fontSize = FONT_SIZES[settings.fontSize];
+};
+
+const loadAppearanceSettings = (): AppearanceSettings => {
+  if (typeof window === 'undefined') {
+    return DEFAULT_APPEARANCE;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    if (!stored) {
+      return DEFAULT_APPEARANCE;
+    }
+    const parsed = JSON.parse(stored) as Partial<AppearanceSettings> | null;
+    return sanitizeAppearance(parsed ?? undefined);
+  } catch (error) {
+    console.warn('Failed to parse appearance settings:', error);
+    return DEFAULT_APPEARANCE;
+  }
+};
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -255,6 +356,7 @@ const App: React.FC = () => {
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const [lastWarnedCount, setLastWarnedCount] = useState<number | null>(null);
   const [booted, setBooted] = useState(false);
+  const [appearance, setAppearance] = useState<AppearanceSettings>(() => loadAppearanceSettings());
   const [showSettings, setShowSettings] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
 
@@ -315,6 +417,36 @@ const App: React.FC = () => {
   }, [sessionStarted, inputData, messages, experienceLevel, visualization, detailLevel, activeTab, activeCaseId, storageKey]);
 
   useEffect(() => {
+    applyAppearanceSettings(appearance);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
+    }
+  }, [appearance]);
+
+  useEffect(() => {
+    if (appearance.theme !== 'System' || typeof window === 'undefined' || !window.matchMedia) {
+      return;
+    }
+
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => applyAppearanceSettings(appearance);
+
+    if (media.addEventListener) {
+      media.addEventListener('change', handleChange);
+    } else {
+      media.addListener(handleChange);
+    }
+
+    return () => {
+      if (media.removeEventListener) {
+        media.removeEventListener('change', handleChange);
+      } else {
+        media.removeListener(handleChange);
+      }
+    };
+  }, [appearance, appearance.theme]);
+
+  useEffect(() => {
     if (!user) {
       setGuestUsageCount(getGuestUsageCount());
       return;
@@ -372,6 +504,15 @@ const App: React.FC = () => {
     } finally {
       setIsEvidenceLoading(false);
     }
+  };
+
+  const handleClearEvidence = async () => {
+    if (!user) {
+      throw new Error('Login required to clear evidence history.');
+    }
+
+    await clearEvidenceHistory();
+    await refreshEvidenceBoard();
   };
 
   useEffect(() => {
@@ -672,7 +813,7 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-[#050505] text-[#e0e0e0] overflow-hidden font-sans selection:bg-[#FF3B3B] selection:text-white crt relative">
+    <div className="flex flex-col h-screen bg-[var(--app-bg)] text-[var(--app-text)] overflow-hidden font-sans selection:bg-[var(--accent-color)] selection:text-white crt relative">
       <div
         className="absolute inset-0 z-0 opacity-10 pointer-events-none"
         style={{
@@ -788,11 +929,22 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} userEmail={user?.email} />
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} userEmail={user?.email} appearance={appearance} onAppearanceChange={setAppearance} onClearEvidence={handleClearEvidence} />
 
       <main className="flex-1 flex flex-col min-h-0 relative z-10 scan-line">
         {!sessionStarted ? (
           <div className="flex-1 overflow-y-auto relative bg-[#0e0e0e]/80">
+            {user && (
+              <div className="sm:hidden px-4 py-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(true)}
+                  className="border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 px-3 hover:border-[#FFD700] hover:text-[#FFD700]"
+                >
+                  Settings
+                </button>
+              </div>
+            )}
             <div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
               <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap">
                 CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY // CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //
@@ -1094,6 +1246,16 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
 
 
 

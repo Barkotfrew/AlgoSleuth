@@ -146,3 +146,13 @@ export const loadCaseMessages = async (caseId: string): Promise<CaseMessageRecor
   return (data ?? []) as CaseMessageRecord[];
 };
 
+export const clearEvidenceHistory = async (): Promise<void> => {
+  const user = await requireAuthenticatedUser();
+  const { error } = await supabase
+    .from('cases')
+    .delete()
+    .eq('user_id', user.id);
+
+  throwIfQueryError(error);
+};
+

@@ -1,22 +1,52 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../services/supabase';
+import type { AccentColorPreference, AppearanceSettings, FontSizePreference, ThemePreference } from '../types';
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
   userEmail?: string | null;
+  appearance: AppearanceSettings;
+  onAppearanceChange: (next: AppearanceSettings) => void;
+  onClearEvidence: () => Promise<void>;
 }
 
 type SettingsTab = 'Account' | 'Security' | 'Preferences';
 
-const tabs: SettingsTab[] = ['Account', 'Security', 'Preferences'];
+type ProfileStatus = { type: 'success' | 'error'; message: string } | null;
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail }) => {
+type DataStatus = { type: 'success' | 'error'; message: string } | null;
+
+const tabs: SettingsTab[] = ['Account', 'Security', 'Preferences'];
+const themeOptions: ThemePreference[] = ['Dark', 'Light', 'System'];
+const fontOptions: FontSizePreference[] = ['Small', 'Medium', 'Large'];
+const accentOptions: { value: AccentColorPreference; label: string; swatch: string }[] = [
+  { value: 'Yellow', label: 'Yellow', swatch: '#FFD700' },
+  { value: 'Green', label: 'Green', swatch: '#34D399' },
+  { value: 'Red', label: 'Red', swatch: '#FF3B3B' },
+  { value: 'Cyan', label: 'Cyan', swatch: '#22D3EE' },
+  { value: 'Purple', label: 'Purple', swatch: '#A855F7' },
+];
+
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  open,
+  onClose,
+  userEmail,
+  appearance,
+  onAppearanceChange,
+  onClearEvidence,
+}) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>('Account');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [status, setStatus] = useState<ProfileStatus>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>(null);
+  const [isProfileSaving, setIsProfileSaving] = useState(false);
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
+  const [dataStatus, setDataStatus] = useState<DataStatus>(null);
 
   useEffect(() => {
     if (!open) {
@@ -27,7 +57,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail 
     setPassword('');
     setConfirmPassword('');
     setStatus(null);
-  }, [open]);
+    setProfileStatus(null);
+    setDataStatus(null);
+
+    const loadProfile = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        setProfileStatus({ type: 'error', message: 'Unable to load profile details.' });
+        return;
+      }
+
+      setProfileUserId(data.user.id);
+      setProfileEmail(data.user.email ?? userEmail ?? '');
+
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('display_name, email')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        setProfileStatus({ type: 'error', message: profileError.message });
+        return;
+      }
+
+      if (profileData?.display_name) {
+        setProfileName(profileData.display_name);
+      }
+      if (profileData?.email) {
+        setProfileEmail(profileData.email);
+      }
+    };
+
+    void loadProfile();
+  }, [open, userEmail]);
 
   const maskedEmail = useMemo(() => {
     if (!userEmail) {
@@ -65,6 +128,85 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail 
     setPassword('');
     setConfirmPassword('');
     setIsUpdating(false);
+  };
+
+  const handleProfileSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setProfileStatus(null);
+
+    if (!profileUserId) {
+      setProfileStatus({ type: 'error', message: 'Profile session unavailable. Please re-open settings.' });
+      return;
+    }
+
+    const trimmedEmail = profileEmail.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setProfileStatus({ type: 'error', message: 'Email is required.' });
+      return;
+    }
+
+    const displayName = profileName.trim();
+    setIsProfileSaving(true);
+
+    const authUpdates: { email?: string; data?: { display_name?: string | null } } = {};
+    if (trimmedEmail && trimmedEmail !== (userEmail ?? '').toLowerCase()) {
+      authUpdates.email = trimmedEmail;
+    }
+    authUpdates.data = { display_name: displayName || null };
+
+    if (authUpdates.email || authUpdates.data) {
+      const { error } = await supabase.auth.updateUser(authUpdates);
+      if (error) {
+        setProfileStatus({ type: 'error', message: error.message });
+        setIsProfileSaving(false);
+        return;
+      }
+    }
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .upsert(
+        {
+          user_id: profileUserId,
+          email: trimmedEmail,
+          display_name: displayName || null,
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (profileError) {
+      setProfileStatus({ type: 'error', message: profileError.message });
+      setIsProfileSaving(false);
+      return;
+    }
+
+    setProfileStatus({
+      type: 'success',
+      message: authUpdates.email
+        ? 'Profile saved. Check your inbox to confirm the new email address.'
+        : 'Profile updated successfully.',
+    });
+    setIsProfileSaving(false);
+  };
+
+  const handleAppearanceChange = (patch: Partial<AppearanceSettings>) => {
+    onAppearanceChange({ ...appearance, ...patch });
+  };
+
+  const handleClearEvidence = async () => {
+    setDataStatus(null);
+
+    const confirmed = window.confirm('Clear all evidence history for your account? This cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await onClearEvidence();
+      setDataStatus({ type: 'success', message: 'Evidence history cleared.' });
+    } catch (error: any) {
+      setDataStatus({ type: 'error', message: error?.message ?? 'Unable to clear evidence history.' });
+    }
   };
 
   if (!open) {
@@ -110,12 +252,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail 
 
           <div className="p-6 space-y-6">
             {activeTab === 'Account' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="border-b border-[#222] pb-3">
                   <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Account Overview</h3>
-                  <p className="text-xs text-gray-500 font-mono">Your primary identity and session details.</p>
+                  <p className="text-xs text-gray-500 font-mono">Manage your profile and identity.</p>
                 </div>
-                <div className="grid gap-4">
+
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="bg-[#111] border border-[#222] p-4">
                     <p className="text-[10px] uppercase tracking-widest text-gray-500 font-mono">Signed in as</p>
                     <p className="text-sm text-[#FFD700] font-mono mt-2">{maskedEmail}</p>
@@ -125,6 +268,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail 
                     <p className="text-sm text-green-400 font-mono mt-2">Active</p>
                   </div>
                 </div>
+
+                <form onSubmit={handleProfileSave} className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                      Display name
+                      <input
+                        type="text"
+                        value={profileName}
+                        onChange={(event) => setProfileName(event.target.value)}
+                        className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                        placeholder="Agent name"
+                      />
+                    </label>
+
+                    <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                      Email
+                      <input
+                        type="email"
+                        value={profileEmail}
+                        onChange={(event) => setProfileEmail(event.target.value)}
+                        className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                        placeholder="agent@domain.com"
+                      />
+                    </label>
+                  </div>
+
+                  {profileStatus && (
+                    <div
+                      className={`text-xs font-mono border px-3 py-2 ${
+                        profileStatus.type === 'success'
+                          ? 'border-green-500/40 bg-green-900/20 text-green-300'
+                          : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
+                      }`}
+                    >
+                      {profileStatus.message}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isProfileSaving}
+                    className="border border-[#FFD700] text-[#FFD700] px-4 py-2 text-xs font-mono uppercase tracking-widest hover:bg-[#FFD700]/10 disabled:opacity-50"
+                  >
+                    {isProfileSaving ? 'Saving...' : 'Save profile'}
+                  </button>
+                </form>
               </div>
             )}
 
@@ -180,13 +369,93 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ open, onClose, userEmail 
             )}
 
             {activeTab === 'Preferences' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="border-b border-[#222] pb-3">
-                  <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Preferences</h3>
-                  <p className="text-xs text-gray-500 font-mono">Tune the experience. More controls coming soon.</p>
+                  <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">App Appearance</h3>
+                  <p className="text-xs text-gray-500 font-mono">Tune the look and feel of the console.</p>
                 </div>
-                <div className="bg-[#111] border border-[#222] p-4 text-xs font-mono text-gray-400">
-                  Preference controls will be deployed in the next ops cycle.
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                    Theme
+                    <select
+                      value={appearance.theme}
+                      onChange={(event) => handleAppearanceChange({ theme: event.target.value as ThemePreference })}
+                      className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                    >
+                      {themeOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                    Font size
+                    <select
+                      value={appearance.fontSize}
+                      onChange={(event) => handleAppearanceChange({ fontSize: event.target.value as FontSizePreference })}
+                      className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                    >
+                      {fontOptions.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">Accent color</p>
+                  <div className="flex flex-wrap gap-2">
+                    {accentOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleAppearanceChange({ accent: option.value })}
+                        className={`px-3 py-2 border text-[10px] font-mono uppercase tracking-widest transition-all ${
+                          appearance.accent === option.value
+                            ? 'border-[#FFD700] text-[#FFD700]'
+                            : 'border-[#333] text-gray-400 hover:border-[#FFD700] hover:text-[#FFD700]'
+                        }`}
+                      >
+                        <span className="inline-flex items-center gap-2">
+                          <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: option.swatch }} />
+                          {option.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-b border-[#222] pb-3">
+                  <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Data & Privacy</h3>
+                  <p className="text-xs text-gray-500 font-mono">Control stored evidence for your account.</p>
+                </div>
+
+                <div className="bg-[#111] border border-[#222] p-4 space-y-3">
+                  <p className="text-xs font-mono text-gray-400">Clear all stored evidence and timeline history.</p>
+                  <button
+                    type="button"
+                    onClick={handleClearEvidence}
+                    className="border border-[#FF3B3B] text-[#FF3B3B] px-3 py-2 text-xs font-mono uppercase tracking-widest hover:bg-[#FF3B3B]/10"
+                  >
+                    Clear evidence history
+                  </button>
+
+                  {dataStatus && (
+                    <div
+                      className={`text-xs font-mono border px-3 py-2 ${
+                        dataStatus.type === 'success'
+                          ? 'border-green-500/40 bg-green-900/20 text-green-300'
+                          : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
+                      }`}
+                    >
+                      {dataStatus.message}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

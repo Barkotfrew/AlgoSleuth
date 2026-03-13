@@ -1,4 +1,4 @@
-﻿-- AlgoSleuth secure evidence schema
+-- AlgoSleuth secure evidence schema
 -- Run this in Supabase SQL Editor (as postgres)
 
 create extension if not exists "pgcrypto";
@@ -36,8 +36,11 @@ create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references auth.users(id) on delete cascade,
   email text not null,
+  display_name text,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists display_name text;
 
 -- Enable Row Level Security
 alter table public.cases enable row level security;
@@ -196,3 +199,5 @@ on public.profiles
 for delete
 to authenticated
 using (auth.uid() = user_id);
+
+

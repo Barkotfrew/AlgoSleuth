@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   createContext,
   useCallback,
   useContext,
@@ -25,6 +25,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const upsertProfile = async (user: User): Promise<void> => {
+  const displayName = typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : null;
   if (!user.email) {
     return;
   }
@@ -33,6 +34,7 @@ const upsertProfile = async (user: User): Promise<void> => {
     {
       user_id: user.id,
       email: user.email,
+      display_name: displayName,
     },
     { onConflict: 'user_id' }
   );
@@ -152,3 +154,4 @@ export const useAuth = (): AuthContextValue => {
 
   return context;
 };
+

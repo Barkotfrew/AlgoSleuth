@@ -10,10 +10,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --app-bg: #050505;
+            --app-text: #ffffff;
+            --accent-color: #FFD700;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #050505;
-            color: #ffffff;
+            background-color: var(--app-bg, #050505);
+            color: var(--app-text, #ffffff);
             cursor: crosshair;
             overflow: hidden;
         }
@@ -37,7 +42,7 @@
             border-radius: 0px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #FFD700; 
+            background: var(--accent-color, #FFD700); 
         }
 
         /* CRT Overlay Effect */
@@ -122,3 +127,4 @@
     <script type="module" src="/index.tsx"></script>
 </body>
 </html>
+

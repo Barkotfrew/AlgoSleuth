@@ -15,3 +15,14 @@ export interface TutorSession {
   visualization: VisualizationPreference;
   detail: DetailPreference;
 }
+
+export type ThemePreference = 'Dark' | 'Light' | 'System';
+export type FontSizePreference = 'Small' | 'Medium' | 'Large';
+export type AccentColorPreference = 'Yellow' | 'Green' | 'Red' | 'Cyan' | 'Purple';
+
+export interface AppearanceSettings {
+  theme: ThemePreference;
+  fontSize: FontSizePreference;
+  accent: AccentColorPreference;
+}
+
