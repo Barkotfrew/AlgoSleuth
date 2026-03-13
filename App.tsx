@@ -6,6 +6,7 @@ import ChatMessageList from './components/ChatMessageList';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import LogoutButton from './components/LogoutButton';
+import SettingsModal from './components/SettingsModal';
 import { loadCases, loadCaseMessages, saveCaseMessage, CaseRecord, CaseMessageRecord } from './services/evidence';
 import { useAuth } from './contexts/AuthContext';
 
@@ -254,6 +255,7 @@ const App: React.FC = () => {
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const [lastWarnedCount, setLastWarnedCount] = useState<number | null>(null);
   const [booted, setBooted] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
 
   const [activeTab, setActiveTab] = useState('CRIME SCENE');
@@ -760,9 +762,18 @@ const App: React.FC = () => {
           </div>
 
           {user ? (
-            <LogoutButton className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] disabled:opacity-50">
-              Logout
-            </LogoutButton>
+            <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => setShowSettings(true)}
+                className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700]"
+              >
+                Settings
+              </button>
+              <LogoutButton className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] disabled:opacity-50">
+                Logout
+              </LogoutButton>
+            </div>
           ) : (
             <button
               onClick={() => {
@@ -776,6 +787,8 @@ const App: React.FC = () => {
           )}
         </div>
       </header>
+
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} userEmail={user?.email} />
 
       <main className="flex-1 flex flex-col min-h-0 relative z-10 scan-line">
         {!sessionStarted ? (
@@ -839,6 +852,7 @@ const App: React.FC = () => {
                       <div className="absolute -inset-1 bg-gradient-to-r from-[#FFD700] via-[#FF3B3B] to-[#FFD700] rounded-sm opacity-20 group-hover:opacity-40 transition duration-1000 blur-md animate-pulse"></div>
                       <div className="relative bg-[#0f0f0f] border border-[#333] p-1 shadow-2xl">
                         <div className="absolute top-0 left-0 bg-[#333] text-[9px] text-gray-400 px-2 py-0.5 font-mono">input_stream.cpp</div>
+
                         <textarea
                           value={inputData}
                           onChange={(e) => setInputData(e.target.value)}
@@ -1021,6 +1035,15 @@ const App: React.FC = () => {
               >
                 Back to Main
               </button>
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(true)}
+                  className="mt-2 w-full border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 hover:border-[#FFD700] hover:text-[#FFD700]"
+                >
+                  Settings
+                </button>
+              )}
             </div>
             <ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
 
@@ -1071,6 +1094,39 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
