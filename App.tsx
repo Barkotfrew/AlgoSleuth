@@ -7,7 +7,7 @@ import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import LogoutButton from './components/LogoutButton';
 import SettingsModal from './components/SettingsModal';
-import { loadCases, loadCaseMessages, saveCaseMessage, clearEvidenceHistory, CaseRecord, CaseMessageRecord } from './services/evidence';
+import { loadCases, loadCaseMessages, saveCaseMessage, clearEvidenceHistory, deleteCaseById, CaseRecord, CaseMessageRecord } from './services/evidence';
 import { useAuth } from './contexts/AuthContext';
 
 interface EvidenceFile {
@@ -514,6 +514,22 @@ const App: React.FC = () => {
     await clearEvidenceHistory();
     await refreshEvidenceBoard();
   };
+  const handleDeleteEvidence = async (caseId: string) => {
+    if (!user) {
+      throw new Error('Login required to delete evidence history.');
+    }
+
+    const confirmed = window.confirm('Move this evidence file to the recycle bin?');
+    if (!confirmed) {
+      return;
+    }
+
+    await deleteCaseById(caseId);
+    if (activeCaseId === caseId) {
+      setActiveCaseId(null);
+    }
+    await refreshEvidenceBoard();
+  };
 
   useEffect(() => {
     void refreshEvidenceBoard();
@@ -945,6 +961,7 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
+
             <div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
               <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap">
                 CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY // CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //
@@ -1129,9 +1146,28 @@ const App: React.FC = () => {
                           <h3 className="text-[#e0e0e0] font-bold text-lg font-mono mb-2 group-hover:text-[#FFD700] transition-colors">{file.title}</h3>
                           <p className="text-xs text-gray-500 mb-4 line-clamp-2">{file.desc}</p>
 
-                          <div className="flex justify-between items-center text-[10px] font-mono uppercase text-gray-600 border-t border-[#333] pt-3 group-hover:text-gray-400">
-                            <span>Diff: {file.difficulty}</span>
-                            <span>Lang: {file.lang}</span>
+                          <div className="flex items-center justify-between text-[10px] font-mono uppercase text-gray-600 border-t border-[#333] pt-3 gap-3 group-hover:text-gray-400">
+                            <div className="flex items-center gap-3">
+                              <span>Diff: {file.difficulty}</span>
+                              <span>Lang: {file.lang}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDeleteEvidence(file.caseId);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-sm border border-[#333] bg-[#0a0a0a]/80 px-2 py-1 text-[9px] font-mono uppercase tracking-wider text-gray-400 hover:border-[#FF3B3B] hover:text-[#FF3B3B]"
+                            >
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                              </svg>
+                              Recycle
+                            </button>
                           </div>
 
                           <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-[#FFD700] group-hover:w-full transition-all duration-700 ease-out"></div>
@@ -1196,6 +1232,7 @@ const App: React.FC = () => {
                   Settings
                 </button>
               )}
+
             </div>
             <ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
 
@@ -1241,11 +1278,31 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-    </div>
+
+      <footer className="border-t border-[#333] bg-[#0a0a0a] text-gray-500">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 text-[10px] font-mono uppercase tracking-wider sm:flex-row sm:items-center sm:justify-between sm:text-xs">
+          <span>AlgoSleuth // Secure Forensics Console</span>
+          <span className="text-gray-600">Live feed is user-specific</span>
+          <span>© {new Date().getFullYear()} AlgoSleuth</span>
+        </div>
+      </footer></div>
   );
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

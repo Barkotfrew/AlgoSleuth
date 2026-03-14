@@ -156,3 +156,26 @@ export const clearEvidenceHistory = async (): Promise<void> => {
   throwIfQueryError(error);
 };
 
+export const deleteCaseById = async (caseId: string): Promise<void> => {
+  const user = await requireAuthenticatedUser();
+  const ownsCase = await assertCaseOwnership(caseId, user.id);
+
+  if (!ownsCase) {
+    throw new Error('Unauthorized case access.');
+  }
+
+  const { error: messageError } = await supabase
+    .from('case_messages')
+    .delete()
+    .eq('case_id', caseId);
+
+  throwIfQueryError(messageError);
+
+  const { error: caseError } = await supabase
+    .from('cases')
+    .delete()
+    .eq('id', caseId)
+    .eq('user_id', user.id);
+
+  throwIfQueryError(caseError);
+};
