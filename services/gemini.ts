@@ -1,6 +1,6 @@
-import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
-import { TutorSession } from "../types";
+﻿import { TutorSession } from "../types";
 import { saveCase, saveCaseMessage } from './evidence';
+import { supabase } from './supabase';
 
 const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
 
@@ -11,7 +11,7 @@ Do not output placeholder values like "Unknown".
 Never use blockquote markers (no leading '>').
 Do not add extra sections outside this structure.
 
-🔎 INPUT YOU WILL RECEIVE
+ðŸ”Ž INPUT YOU WILL RECEIVE
 User will provide:
 - DSA Code Snippet
 - Experience Level (Beginner / Intermediate / Advanced)
@@ -44,10 +44,10 @@ Report depth rules:
 ## Evidence Board (Algorithm Trace)
 ONLY include this section if Algorithm Trace = ON.
 Visualize execution using ASCII diagrams:
-📍 for pointers / boundaries
-🔵 for current element / node
-✅ for successful condition
-❌ for failure or bug
+ðŸ“ for pointers / boundaries
+ðŸ”µ for current element / node
+âœ… for successful condition
+âŒ for failure or bug
 Rules:
 Visualize ONLY what helps understanding
 No storytelling inside diagrams
@@ -58,7 +58,7 @@ Keep visuals technical and clean
 - Space Complexity: O(...)
 - Optimization Risk Level: Low / Medium / High
 
-## 🧩 Next Clue
+## ðŸ§© Next Clue
 End with ONE short interactive question or mini practice task.
 
 Style rules:
@@ -67,26 +67,36 @@ Style rules:
 - Use markdown lists, not tables.
 - No disclaimers about being an AI model.`;
 
-export class DSATutorService {
-  private chat: Chat | null = null;
-  private ai: GoogleGenAI;
-  private activeCaseId: string | null = null;
+type ConversationMessage = { role: 'user' | 'model'; text: string };
 
-  constructor() {
-    this.ai = new GoogleGenAI({
-      apiKey: import.meta.env.VITE_GEMINI_API_KEY,
-    });
+type GeminiProxyPayload = {
+  systemInstruction: string;
+  messages: ConversationMessage[];
+  model: string;
+};
+
+const callGeminiProxy = async (payload: GeminiProxyPayload): Promise<string> => {
+  const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+    body: payload,
+  });
+
+  if (error) {
+    throw error;
   }
+
+  if (!data || typeof data.text !== 'string') {
+    throw new Error('Empty response from AI service.');
+  }
+
+  return data.text;
+};
+
+export class DSATutorService {
+  private history: ConversationMessage[] = [];
+  private activeCaseId: string | null = null;
 
   async startSession(session: TutorSession): Promise<string> {
     const { input, level, visualization, detail } = session;
-
-    this.chat = this.ai.chats.create({
-      model: GEMINI_MODEL,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-      },
-    });
 
     const prompt = `
 [CODE SNIPPET START]
@@ -99,8 +109,16 @@ ${input}
 - Report Depth: ${detail === 'Long' ? 'Long' : 'Short'}
 `;
 
-    const response = await this.chat.sendMessage({ message: prompt });
-    const aiResponseText = response.text || "Investigation inconclusive. No data returned.";
+    const aiResponseText = await callGeminiProxy({
+      systemInstruction: SYSTEM_INSTRUCTION,
+      messages: [{ role: 'user', text: prompt }],
+      model: GEMINI_MODEL,
+    });
+
+    this.history = [
+      { role: 'user', text: prompt },
+      { role: 'model', text: aiResponseText || 'Investigation inconclusive. No data returned.' },
+    ];
 
     try {
       const savedCase = await saveCase({
@@ -132,23 +150,12 @@ ${input}
     return aiResponseText;
   }
 
-  async resumeSession(historyMessages: { role: 'user' | 'model'; text: string }[]) {
-    const history = historyMessages.map((msg) => ({
-      role: msg.role,
-      parts: [{ text: msg.text }],
-    }));
-
-    this.chat = this.ai.chats.create({
-      model: GEMINI_MODEL,
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-      },
-      history,
-    });
+  async resumeSession(historyMessages: ConversationMessage[]) {
+    this.history = historyMessages.map((msg) => ({ role: msg.role, text: msg.text }));
   }
 
   hasActiveSession() {
-    return this.chat !== null;
+    return this.history.length > 0;
   }
 
   getActiveCaseId() {
@@ -160,16 +167,18 @@ ${input}
   }
 
   async sendMessageStream(message: string, onChunk: (text: string) => void) {
-    if (!this.chat) throw new Error('No active session');
-    const stream = await this.chat.sendMessageStream({ message });
-    let fullText = '';
-    for await (const chunk of stream) {
-      const c = chunk as GenerateContentResponse;
-      fullText += c.text;
-      onChunk(fullText);
-    }
+    if (!this.history.length) throw new Error('No active session');
+
+    const nextMessages: ConversationMessage[] = [...this.history, { role: 'user', text: message }];
+
+    const aiResponseText = await callGeminiProxy({
+      systemInstruction: SYSTEM_INSTRUCTION,
+      messages: nextMessages,
+      model: GEMINI_MODEL,
+    });
+
+    this.history = [...nextMessages, { role: 'model', text: aiResponseText }];
+
+    onChunk(aiResponseText);
   }
 }
-
-
-

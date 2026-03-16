@@ -5,7 +5,6 @@ import { DSATutorService } from './services/DSATutorService';
 import ChatMessageList from './components/ChatMessageList';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
-import LogoutButton from './components/LogoutButton';
 import SettingsModal from './components/SettingsModal';
 import { loadCases, loadCaseMessages, saveCaseMessage, clearEvidenceHistory, deleteCaseById, CaseRecord, CaseMessageRecord } from './services/evidence';
 import { useAuth } from './contexts/AuthContext';
@@ -552,11 +551,11 @@ const App: React.FC = () => {
     }
 
     if (normalized.includes('api key') || normalized.includes('unauthorized') || normalized.includes('permission denied')) {
-      return 'AUTH FAILURE: Verify VITE_GEMINI_API_KEY in .env and restart the dev server.';
+      return 'AUTH FAILURE: Gemini key not configured on the server. Set GEMINI_API_KEY in Supabase Edge Function secrets and redeploy.';
     }
 
     if (normalized.includes('model') && (normalized.includes('not found') || normalized.includes('unsupported'))) {
-      return 'MODEL ERROR: Set VITE_GEMINI_MODEL=gemini-2.5-flash in .env and restart.';
+      return 'MODEL ERROR: Set VITE_GEMINI_MODEL=gemini-2.5-flash in the web app env and redeploy.';
     }
 
     if (normalized.includes('no active session')) {
@@ -871,38 +870,38 @@ Details: ${errorMessage}`;
         </div>
       )}
 
-      <header className="hidden sm:flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-4 sm:px-6 py-4 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-[#333] shrink-0 z-40 relative">
+      <header className="flex flex-nowrap items-center justify-between gap-2 px-3 py-2 sm:gap-4 sm:px-6 sm:py-4 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-[#333] shrink-0 z-40 relative">
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-50"></div>
 
-        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-          <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[#1a1a1a] rounded-sm border border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <div className="relative w-9 h-9 sm:w-12 sm:h-12 flex items-center justify-center bg-[#1a1a1a] rounded-sm border border-[#FFD700] shadow-[0_0_15px_rgba(255,215,0,0.3)] overflow-hidden">
             <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0_340deg,rgba(255,215,0,0.5)_360deg)] animate-[spin_4s_linear_infinite] rounded-full opacity-50"></div>
             <div className="absolute inset-0 rounded-full border border-[#FFD700] opacity-30 scale-75"></div>
-            <span className="text-xl sm:text-2xl relative z-10">??????</span>
+            <span className="text-[clamp(0.85rem,3.5vw,1.5rem)] relative z-10">🕵️‍♂️</span>
           </div>
           <div>
-            <h1 className="font-bold text-xl sm:text-2xl text-[#FFD700] tracking-[0.15em] sm:tracking-[0.2em] font-mono uppercase">CASE #DSA</h1>
+            <h1 className="font-bold text-[clamp(0.8rem,3.4vw,1.5rem)] text-[#FFD700] tracking-[0.12em] sm:tracking-[0.2em] font-mono uppercase whitespace-nowrap">CASE #DSA</h1>
             <div className="flex items-center gap-2 mt-1">
               <div className="flex gap-0.5">
                 <div className="w-1 h-3 bg-[#FF3B3B] animate-pulse"></div>
                 <div className="w-1 h-2 bg-[#FF3B3B] animate-pulse delay-75"></div>
                 <div className="w-1 h-4 bg-[#FF3B3B] animate-pulse delay-150"></div>
               </div>
-              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">LIVE FEED // SECURE</p>
+              <p className="text-[clamp(7px,2vw,10px)] text-gray-500 font-bold uppercase tracking-[0.28em] whitespace-nowrap">LIVE FEED // SECURE</p>
             </div>
           </div>
         </div>
 
-        <div className="flex w-full md:w-auto flex-wrap items-center gap-2 sm:gap-3 md:gap-4">
+        <div className="flex flex-nowrap items-center gap-3 sm:gap-4 md:gap-5">
           {sessionStarted && (
-            <button onClick={reset} className="group relative w-full sm:w-auto px-4 sm:px-6 py-2 bg-transparent overflow-hidden rounded-sm">
+            <button onClick={reset} className="group relative w-auto px-3 sm:px-6 py-1.5 sm:py-2 bg-transparent overflow-hidden rounded-sm">
               <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-[#FFD700]/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
               <div className="absolute inset-0 border border-[#FFD700] opacity-50 group-hover:opacity-100 transition-opacity"></div>
-              <span className="relative text-[10px] sm:text-xs font-bold text-[#FFD700] uppercase tracking-wider font-mono">New Case</span>
+              <span className="relative text-[clamp(7px,1.6vw,10px)] font-bold text-[#FFD700] uppercase tracking-wider font-mono">New Case</span>
             </button>
           )}
 
-          <div className="hidden md:flex flex-col items-end text-[10px] font-mono text-gray-600 max-w-[320px]">
+          <div className="flex flex-col items-end text-[clamp(7px,1.7vw,10px)] font-mono text-gray-600 leading-tight max-w-[45vw] whitespace-nowrap">
             <span className="text-gray-400 truncate">
               USER: <span className="text-[#FFD700]">{user?.email ?? 'guest@agent'}</span>
             </span>
@@ -921,25 +920,20 @@ Details: ${errorMessage}`;
           </div>
 
           {user ? (
-            <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => setShowSettings(true)}
-                className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700]"
-              >
-                Settings
-              </button>
-              <LogoutButton className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] disabled:opacity-50">
-                Logout
-              </LogoutButton>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              className={`w-auto rounded-sm border border-[#333] px-2 sm:px-4 py-1.5 sm:py-2 text-[clamp(7px,1.6vw,10px)] font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] ${sessionStarted ? "hidden sm:inline-flex" : ""}`}
+            >
+              Settings
+            </button>
           ) : (
             <button
               onClick={() => {
                 setAuthView('login');
                 setShowAuthGate(true);
               }}
-              className="w-full sm:w-auto rounded-sm border border-[#333] px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700]"
+              className={`w-auto rounded-sm border border-[#333] px-2 sm:px-4 py-1.5 sm:py-2 text-[clamp(7px,1.6vw,10px)] font-mono uppercase tracking-wider text-gray-200 hover:border-[#FFD700] hover:text-[#FFD700] ${sessionStarted ? "hidden sm:inline-flex" : ""}`}
             >
               Login
             </button>
@@ -952,18 +946,7 @@ Details: ${errorMessage}`;
       <main className="flex-1 flex flex-col min-h-0 relative z-10 scan-line">
         {!sessionStarted ? (
           <div className="flex-1 overflow-y-auto relative bg-[#0e0e0e]/80">
-            {user && (
-              <div className="sm:hidden px-4 py-3 bg-[#0a0a0a] border-b border-[#333] flex items-center justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowSettings(true)}
-                  className="border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 px-3 hover:border-[#FFD700] hover:text-[#FFD700]"
-                >
-                  Settings
-                </button>
-              </div>
-            )}
-            <div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
+<div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
               <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap">
                 CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY // CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //
               </div>
@@ -1008,25 +991,16 @@ Details: ${errorMessage}`;
                     </button>
                   ))}
                 </div>
-                {user && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSettings(true)}
-                    className="hidden sm:inline-flex border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 px-3 hover:border-[#FFD700] hover:text-[#FFD700]"
-                  >
-                    Settings
-                  </button>
-                )}
-              </div>
+</div>
 
               {activeTab === 'CRIME SCENE' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   <div className="lg:col-span-2 space-y-4">
                     <div className="flex justify-between items-center border-b border-[#333] pb-2">
                       <h2 className="text-[#e0e0e0] font-bold text-xl tracking-wider flex items-center gap-3">
-                        <span className="text-[#FFD700] text-2xl animate-pulse">??</span> SUSPECT PROFILE
+                        <span className="text-[#FFD700] text-2xl animate-pulse">📂</span> SUSPECT PROFILE
                       </h2>
-                      <span className="text-xs text-[#FF3B3B] font-mono border border-[#FF3B3B] px-2 py-0.5 rounded-sm animate-pulse">STATUS: AT LARGE</span>
+                      <span className="text-xs text-[#FF3B3B] font-mono border border-[#FF3B3B] px-2 py-0.5 rounded-sm animate-pulse whitespace-nowrap">STATUS: AT LARGE</span>
                     </div>
 
                     <div className="relative group">
@@ -1048,7 +1022,7 @@ Details: ${errorMessage}`;
                   <div className="space-y-6">
                     <div className="flex justify-between items-end border-b border-[#333] pb-2">
                       <h2 className="text-[#e0e0e0] font-bold text-xl tracking-wider flex items-center gap-2">
-                        <span className="text-[#FFD700]">??</span> MODUS OPERANDI
+                        <span className="text-[#FFD700]">⚙️</span> MODUS OPERANDI
                       </h2>
                     </div>
 
@@ -1150,7 +1124,7 @@ Details: ${errorMessage}`;
                           className="bg-[#141414] border border-[#333] p-4 sm:p-6 hover:border-[#FFD700] hover:bg-[#1a1a1a] transition-all cursor-pointer group relative overflow-hidden transform hover:-translate-y-1 hover:shadow-[0_5px_20px_rgba(0,0,0,0.5)]"
                         >
                           <div className="absolute top-0 right-0 p-2 opacity-30 group-hover:opacity-100 transition-opacity">
-                            <span className="text-xs font-mono text-[#FFD700]">??</span>
+                            <span className="text-xs font-mono text-[#FFD700]">📂</span>
                           </div>
                           <div className="mb-4">
                             <span className="text-[10px] text-[#FF3B3B] border border-[#FF3B3B] px-2 py-0.5 uppercase tracking-widest">{file.id}</span>
@@ -1193,7 +1167,8 @@ Details: ${errorMessage}`;
               {activeTab === 'TIMELINE' && (
                 <div className="max-w-4xl mx-auto">
                   <div className="flex items-center gap-3 mb-8 border-b border-[#333] pb-4">
-                    <span className="text-3xl">??</span>
+                        <span className="text-3xl">📅</span>
+                    <span className="text-3xl"></span>
                     <div>
                       <h2 className="text-xl font-bold text-[#FFD700] tracking-widest uppercase">Investigation Roadmap</h2>
                       <p className="text-xs text-gray-500 font-mono">MASTER THE ALGORITHMS TO CLOSE ALL CASES</p>
@@ -1242,25 +1217,7 @@ Details: ${errorMessage}`;
           </div>
         ) : (
           <div className="flex-1 flex flex-col min-h-0 relative z-20">
-            <div className="sm:hidden px-4 py-3 bg-[#0a0a0a] border-b border-[#333]">
-              <button
-                onClick={reset}
-                className="w-full border border-[#FFD700] text-[#FFD700] uppercase tracking-wider text-[10px] font-mono py-2"
-              >
-                Back to Main
-              </button>
-              {user && (
-                <button
-                  type="button"
-                  onClick={() => setShowSettings(true)}
-                  className="mt-2 w-full border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 hover:border-[#FFD700] hover:text-[#FFD700]"
-                >
-                  Settings
-                </button>
-              )}
-
-            </div>
-            <ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
+<ChatMessageList messages={messages} isTyping={isTyping} onSuggestionClick={(text) => handleSendMessage(text)} />
 
             <div className="p-4 sm:p-6 bg-[#0a0a0a] border-t border-[#333] z-30">
               {!user && guestLocked && (
@@ -1317,6 +1274,19 @@ Details: ${errorMessage}`;
 };
 
 export default App;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

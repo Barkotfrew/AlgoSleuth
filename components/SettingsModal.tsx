@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../services/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import type { AccentColorPreference, AppearanceSettings, FontSizePreference, ThemePreference } from '../types';
 
 interface SettingsModalProps {
@@ -47,6 +48,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<DataStatus>(null);
+  const { logout } = useAuth();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -63,7 +67,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const loadProfile = async () => {
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
-        setProfileStatus({ type: 'error', message: 'Unable to load profile details.' });
+        setProfileUserId(null);
+        setProfileName('');
+        setProfileEmail(userEmail ?? '');
         return;
       }
 
@@ -193,6 +199,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onAppearanceChange({ ...appearance, ...patch });
   };
 
+  const handleLogout = async () => {
+    setLogoutError(null);
+    setIsSigningOut(true);
+
+    try {
+      await logout();
+      onClose();
+    } catch (error: any) {
+      setLogoutError(error?.message ?? 'Failed to logout.');
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  const isAuthenticated = Boolean(profileUserId);
   const handleClearEvidence = async () => {
     setDataStatus(null);
 
@@ -265,107 +286,144 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   </div>
                   <div className="bg-[#111] border border-[#222] p-4">
                     <p className="text-[10px] uppercase tracking-widest text-gray-500 font-mono">Session status</p>
-                    <p className="text-sm text-green-400 font-mono mt-2">Active</p>
+                    <p className={`text-sm font-mono mt-2 ${isAuthenticated ? "text-green-400" : "text-gray-400"}`}>
+                      {isAuthenticated ? "Active" : "Guest"}
+                    </p>
                   </div>
                 </div>
+                {!isAuthenticated && (
+                  <div className="border border-[#222] bg-[#111] p-4 text-xs font-mono text-gray-400">
+                    Sign in to manage profile and security settings.
+                  </div>
+                )}
 
-                <form onSubmit={handleProfileSave} className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
+                {isAuthenticated && (
+                  <>
+                    <form onSubmit={handleProfileSave} className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                          Display name
+                          <input
+                            type="text"
+                            value={profileName}
+                            onChange={(event) => setProfileName(event.target.value)}
+                            className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                            placeholder="Agent name"
+                          />
+                        </label>
+
+                        <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
+                          Email
+                          <input
+                            type="email"
+                            value={profileEmail}
+                            onChange={(event) => setProfileEmail(event.target.value)}
+                            className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
+                            placeholder="agent@domain.com"
+                          />
+                        </label>
+                      </div>
+
+                      {profileStatus && (
+                        <div
+                          className={`text-xs font-mono border px-3 py-2 ${
+                            profileStatus.type === 'success'
+                              ? 'border-green-500/40 bg-green-900/20 text-green-300'
+                              : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
+                          }`}
+                        >
+                          {profileStatus.message}
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={isProfileSaving}
+                        className="border border-[#FFD700] text-[#FFD700] px-4 py-2 text-xs font-mono uppercase tracking-widest hover:bg-[#FFD700]/10 disabled:opacity-50"
+                      >
+                        {isProfileSaving ? 'Saving...' : 'Save profile'}
+                      </button>
+                    </form>
+
+                    <div className="border-t border-[#222] pt-4">
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-[#e0e0e0]">Sign out</h4>
+                      <p className="text-xs text-gray-500 font-mono mt-1">End this session on the current device.</p>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          disabled={isSigningOut}
+                          className="rounded-sm border border-[#FF3B3B] px-4 py-2 text-xs font-mono uppercase tracking-wider text-[#FF3B3B] hover:bg-[#FF3B3B]/10 disabled:opacity-50"
+                        >
+                          {isSigningOut ? 'Signing Out...' : 'Logout'}
+                        </button>
+                      </div>
+                      {logoutError && (
+                        <div className="mt-3 text-xs font-mono border border-[#FF3B3B]/50 bg-[#2a0d0d] px-3 py-2 text-red-200">
+                          {logoutError}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'Security' && (
+              !isAuthenticated ? (
+                <div className="border border-[#222] bg-[#111] p-4 text-xs font-mono text-gray-400">
+                  Sign in to update your password.
+                </div>
+              ) : (
+                <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                  <div className="border-b border-[#222] pb-3">
+                    <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Security</h3>
+                    <p className="text-xs text-gray-500 font-mono">Update your password to secure your account.</p>
+                  </div>
+
+                  <div className="grid gap-4">
                     <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
-                      Display name
+                      New password
                       <input
-                        type="text"
-                        value={profileName}
-                        onChange={(event) => setProfileName(event.target.value)}
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
                         className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
-                        placeholder="Agent name"
                       />
                     </label>
 
                     <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
-                      Email
+                      Confirm new password
                       <input
-                        type="email"
-                        value={profileEmail}
-                        onChange={(event) => setProfileEmail(event.target.value)}
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
                         className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
-                        placeholder="agent@domain.com"
                       />
                     </label>
                   </div>
 
-                  {profileStatus && (
+                  {status && (
                     <div
                       className={`text-xs font-mono border px-3 py-2 ${
-                        profileStatus.type === 'success'
+                        status.type === 'success'
                           ? 'border-green-500/40 bg-green-900/20 text-green-300'
                           : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
                       }`}
                     >
-                      {profileStatus.message}
+                      {status.message}
                     </div>
                   )}
 
                   <button
                     type="submit"
-                    disabled={isProfileSaving}
+                    disabled={isUpdating}
                     className="border border-[#FFD700] text-[#FFD700] px-4 py-2 text-xs font-mono uppercase tracking-widest hover:bg-[#FFD700]/10 disabled:opacity-50"
                   >
-                    {isProfileSaving ? 'Saving...' : 'Save profile'}
+                    {isUpdating ? 'Updating...' : 'Update password'}
                   </button>
                 </form>
-              </div>
-            )}
-
-            {activeTab === 'Security' && (
-              <form onSubmit={handlePasswordUpdate} className="space-y-4">
-                <div className="border-b border-[#222] pb-3">
-                  <h3 className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Security</h3>
-                  <p className="text-xs text-gray-500 font-mono">Update your password to secure your account.</p>
-                </div>
-
-                <div className="grid gap-4">
-                  <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
-                    New password
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                      className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
-                    />
-                  </label>
-
-                  <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
-                    Confirm new password
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(event) => setConfirmPassword(event.target.value)}
-                      className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
-                    />
-                  </label>
-                </div>
-
-                {status && (
-                  <div
-                    className={`text-xs font-mono border px-3 py-2 ${
-                      status.type === 'success'
-                        ? 'border-green-500/40 bg-green-900/20 text-green-300'
-                        : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
-                    }`}
-                  >
-                    {status.message}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isUpdating}
-                  className="border border-[#FFD700] text-[#FFD700] px-4 py-2 text-xs font-mono uppercase tracking-widest hover:bg-[#FFD700]/10 disabled:opacity-50"
-                >
-                  {isUpdating ? 'Updating...' : 'Update password'}
-                </button>
-              </form>
+              )
             )}
 
             {activeTab === 'Preferences' && (
@@ -467,3 +525,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 };
 
 export default SettingsModal;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { ChatMessage } from '../types';
 import ComplexityDashboard from './ComplexityDashboard';
 
@@ -443,7 +443,7 @@ const ChatMessageList: React.FC<Props> = ({ messages, isTyping, onSuggestionClic
                 }`}
               >
                 {isModel && <div className="absolute inset-0 bg-[#FF3B3B] opacity-10 animate-pulse" />}
-                {isModel ? 'CIU' : 'YOU'}
+                {isModel ? '🕵️‍♂️' : 'YOU'}
               </div>
 
               <div className={`flex-1 min-w-0 ${isModel ? '' : 'flex justify-end'}`}>
