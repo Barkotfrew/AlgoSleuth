@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useRef, useEffect } from 'react';
 import { TutorSession, ChatMessage, ExperienceLevel, VisualizationPreference, DetailPreference, AppearanceSettings, ThemePreference, FontSizePreference, AccentColorPreference } from './types';
 import { DSATutorService } from './services/DSATutorService';
@@ -164,7 +164,7 @@ const mapCaseToEvidenceFile = (record: CaseRecord, index: number): EvidenceFile 
   const description =
     extractCaseField(record.ai_response, 'Risk Summary') ||
     extractCaseField(record.ai_response, 'Status') ||
-    record.ai_response.slice(0, 120).replace(/\n/g, ' ').trim() ||
+    record.ai_response.slice(0, 120).replace(/\\n/g, ' ').trim() ||
     'Investigation record stored.';
   const language = extractCaseField(record.ai_response, 'Language') || 'Unknown';
 
@@ -564,7 +564,9 @@ const App: React.FC = () => {
     }
 
     if (errorMessage) {
-      return `${defaultMsg}\n\nDetails: ${errorMessage}`;
+      return `${defaultMsg}
+
+Details: ${errorMessage}`;
     }
 
     return defaultMsg;
@@ -961,7 +963,6 @@ const App: React.FC = () => {
                 </button>
               </div>
             )}
-
             <div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
               <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap">
                 CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY // CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //
@@ -990,21 +991,32 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              <div className="flex border-b border-[#333] mb-8 overflow-x-auto gap-4">
-                {['CRIME SCENE', 'EVIDENCE', 'TIMELINE'].map((tab) => (
+              <div className="flex items-center justify-between gap-3 border-b border-[#333] mb-8">
+                <div className="flex flex-nowrap overflow-x-auto gap-4">
+                  {['CRIME SCENE', 'EVIDENCE', 'TIMELINE'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 sm:px-6 py-2 sm:py-3 font-mono text-xs sm:text-sm font-bold tracking-widest cursor-pointer transition-all border-b-2 whitespace-nowrap shrink-0 relative group ${
+                        activeTab === tab
+                          ? 'text-[#FFD700] border-[#FFD700] bg-[#1a1a1a]'
+                          : 'text-gray-500 border-transparent hover:text-gray-300 hover:bg-[#1a1a1a]/50'
+                      }`}
+                    >
+                      {activeTab === tab && <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#FF3B3B] rounded-full animate-ping"></span>}
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+                {user && (
                   <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`px-4 sm:px-6 py-2 sm:py-3 font-mono text-xs sm:text-sm font-bold tracking-widest cursor-pointer transition-all border-b-2 whitespace-nowrap relative group ${
-                      activeTab === tab
-                        ? 'text-[#FFD700] border-[#FFD700] bg-[#1a1a1a]'
-                        : 'text-gray-500 border-transparent hover:text-gray-300 hover:bg-[#1a1a1a]/50'
-                    }`}
+                    type="button"
+                    onClick={() => setShowSettings(true)}
+                    className="hidden sm:inline-flex border border-[#333] text-gray-200 uppercase tracking-wider text-[10px] font-mono py-2 px-3 hover:border-[#FFD700] hover:text-[#FFD700]"
                   >
-                    {activeTab === tab && <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#FF3B3B] rounded-full animate-ping"></span>}
-                    {tab}
+                    Settings
                   </button>
-                ))}
+                )}
               </div>
 
               {activeTab === 'CRIME SCENE' && (
@@ -1092,7 +1104,7 @@ const App: React.FC = () => {
                         disabled={!inputData.trim() || isTyping || guestLocked}
                         className="w-full py-4 sm:py-5 bg-[#FF3B3B] text-white font-bold tracking-[0.2em] uppercase text-xs sm:text-sm transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        INITIATE SCAN 
+                        INITIATE SCAN
                       </button>
                     </div>
                   </div>
@@ -1198,10 +1210,24 @@ const App: React.FC = () => {
                             item.status === 'LOCKED' ? 'border-[#333] opacity-50' : `${item.borderClass} ${item.hoverClass}`
                           }`}
                         >
-                          {item.status === 'IN PROGRESS' && <div className="absolute top-0 right-0 px-2 py-1 bg-[#FFD700] text-black text-[10px] font-bold font-mono">ACTIVE CASE</div>}
-                          {item.status === 'SOLVED' && <div className="absolute top-0 right-0 px-2 py-1 bg-green-900 text-green-300 text-[10px] font-bold font-mono">CASE CLOSED</div>}
+                          {item.status === 'IN PROGRESS' && (
+                            <div className="absolute top-0 right-0 px-2 py-1 bg-[#FFD700] text-black text-[10px] font-bold font-mono">
+                              ACTIVE CASE
+                            </div>
+                          )}
+                          {item.status === 'SOLVED' && (
+                            <div className="absolute top-0 right-0 px-2 py-1 bg-green-900 text-green-300 text-[10px] font-bold font-mono">
+                              CASE CLOSED
+                            </div>
+                          )}
 
-                          <h3 className={`text-lg font-bold font-mono uppercase mb-1 ${item.status === 'LOCKED' ? 'text-gray-700' : 'text-[#e0e0e0]'}`}>{item.title}</h3>
+                          <h3
+                            className={`text-lg font-bold font-mono uppercase mb-1 ${
+                              item.status === 'LOCKED' ? 'text-gray-700' : 'text-[#e0e0e0]'
+                            }`}
+                          >
+                            {item.title}
+                          </h3>
                           <div className="text-[10px] text-[#FF3B3B] uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
                             <span className="w-1 h-1 bg-[#FF3B3B] rounded-full"></span> {item.alias}
                           </div>
@@ -1280,67 +1306,17 @@ const App: React.FC = () => {
       </main>
 
       <footer className="border-t border-[#333] bg-[#0a0a0a] text-gray-500">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 text-[10px] font-mono uppercase tracking-wider sm:flex-row sm:items-center sm:justify-between sm:text-xs">
-          <span>AlgoSleuth // Secure Forensics Console</span>
-          <span className="text-gray-600">Live feed is user-specific</span>
-          <span>� {new Date().getFullYear()} AlgoSleuth</span>
+        <div className="mx-auto flex max-w-6xl flex-nowrap items-center justify-between gap-4 px-4 py-2 text-[9px] sm:text-[10px] font-mono uppercase tracking-wider overflow-x-auto">
+          <span className="whitespace-nowrap">AlgoSleuth // Secure Forensics Console</span>
+          <span className="text-gray-600 whitespace-nowrap">Live feed is user-specific</span>
+          <span className="whitespace-nowrap">© {new Date().getFullYear()} AlgoSleuth</span>
         </div>
-      </footer></div>
+      </footer>
+    </div>
   );
 };
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
