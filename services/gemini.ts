@@ -10,6 +10,7 @@ Your output must be clean, readable, and visually structured in markdown.
 Do not output placeholder values like "Unknown".
 Never use blockquote markers (no leading '>').
 Do not add extra sections outside this structure.
+Use paragraph format for explanations. Do not use bullet points or numbered lists.
 
 🔎 INPUT YOU WILL RECEIVE
 User will provide:
@@ -30,11 +31,8 @@ Investigation Status: <Status Icon> <Status Text>
 Risk Summary: <One sentence forensic summary>
 
 ## Investigation Notes (Main Explanation)
-Explain step-by-step:
-- What code is doing
-- Why it works or fails
-- Where bug occurs (if exists)
-- Optimization opportunities
+Explain in paragraphs:
+Describe what the code does, why it works or fails, where a bug occurs (if any), and any optimization opportunities.
 
 Match explanation depth to dropdown.
 Report depth rules:
@@ -43,7 +41,7 @@ Report depth rules:
 
 ## Evidence Board (Algorithm Trace)
 ONLY include this section if Algorithm Trace = ON.
-Visualize execution using ASCII diagrams:
+Visualize execution using ASCII diagrams in plain lines (no bullets or numbered steps):
 📍 for pointers / boundaries
 🔵 for current element / node
 ✅ for successful condition

@@ -185,12 +185,19 @@ const extractComplexity = (statsBlock: string): { time: string; space: string } 
   };
 };
 
+const wrapInvestigationNotes = (html: string): string =>
+  html.replace(
+    /(<h3[^>]*>Investigation Notes<\/h3>)([\s\S]*?)(?=<h3[^>]*>|<h2[^>]*>|$)/g,
+    '$1<div class="text-justify">$2</div>'
+  );
+
 const formatPartToHtml = (part: string): string => {
   const safe = escapeHtml(part);
 
-  return safe
+  const formatted = safe
     .replace(/^###\s*(?:[^\n]*?)CASE ANALYSIS:\s*(.*)$/gim, '<h2 class="text-2xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-4">CASE ANALYSIS: $1</h2>')
     .replace(/^####\s*2[^\n]*Investigation Status.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">2. Investigation Status</h3>')
+    .replace(/^\s*CASE REPORT\s*:?\s*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-8">CASE REPORT</h3>')
     .replace(/^####\s*4[^\n]*Investigation Notes.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Investigation Notes</h3>')
     .replace(/^####\s*5[^\n]*Evidence Board.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Evidence Board (Algorithm Trace)</h3>')
     .replace(/^##\s*.*Case Stats.*$/gim, '<h3 class="text-xl font-bold text-[#FFD700] border-b-2 border-[#333] pb-3 mb-6 mt-10">Case Stats</h3>')
@@ -207,9 +214,19 @@ const formatPartToHtml = (part: string): string => {
     .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold bg-[#FFD700]/10 px-1 rounded-sm">$1</strong>')
     .replace(/`([^`]+)`/g, '<code class="text-[#FFD700] bg-[#1a1a1a] px-1 rounded">$1</code>')
     .replace(/\n/g, '<br />');
+
+  return wrapInvestigationNotes(formatted);
 };
 
-const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
+const formatEvidenceMarkdown = (value: string): string => {
+  const safe = escapeHtml(value);
+  return safe
+    .replace(/`([^`]+)`/g, '<code class="text-gray-200 bg-[#0f0f0f] border border-[#333] px-1 rounded">$1</code>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>')
+    .replace(/\n/g, '<br />');
+};
+
+const CodeBlock: React.FC<{ code: string; allowMarkdown?: boolean }> = ({ code, allowMarkdown = false }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -235,7 +252,13 @@ const CodeBlock: React.FC<{ code: string }> = ({ code }) => {
         </div>
       </div>
       <pre className="p-3 sm:p-5 overflow-x-auto text-[10px] sm:text-[11px] md:text-xs lg:text-sm code-font text-[#e0e0e0] leading-relaxed custom-scrollbar">
-        <code>{code}</code>
+        <code>
+          {allowMarkdown ? (
+            <span dangerouslySetInnerHTML={{ __html: formatEvidenceMarkdown(code) }} />
+          ) : (
+            code
+          )}
+        </code>
       </pre>
     </div>
   );
@@ -332,7 +355,7 @@ const renderFormattedText = (text: string, onSuggestionClick?: (text: string) =>
       );
 
       if (body) {
-        nodes.push(<CodeBlock key={nextKey('evidence-block')} code={body} />);
+        nodes.push(<CodeBlock key={nextKey('evidence-block')} code={body} allowMarkdown />);
       }
 
       nodes.push(...renderTextChunk(evidenceSegment.after));
