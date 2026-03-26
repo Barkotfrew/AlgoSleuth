@@ -11,7 +11,7 @@ Do not output placeholder values like "Unknown".
 Never use blockquote markers (no leading '>').
 Do not add extra sections outside this structure.
 
-ðŸ”Ž INPUT YOU WILL RECEIVE
+🔎 INPUT YOU WILL RECEIVE
 User will provide:
 - DSA Code Snippet
 - Experience Level (Beginner / Intermediate / Advanced)
@@ -44,10 +44,10 @@ Report depth rules:
 ## Evidence Board (Algorithm Trace)
 ONLY include this section if Algorithm Trace = ON.
 Visualize execution using ASCII diagrams:
-ðŸ“ for pointers / boundaries
-ðŸ”µ for current element / node
-âœ… for successful condition
-âŒ for failure or bug
+📍 for pointers / boundaries
+🔵 for current element / node
+✅ for successful condition
+❌ for failure or bug
 Rules:
 Visualize ONLY what helps understanding
 No storytelling inside diagrams
@@ -58,7 +58,7 @@ Keep visuals technical and clean
 - Space Complexity: O(...)
 - Optimization Risk Level: Low / Medium / High
 
-## ðŸ§© Next Clue
+## 🧩 Next Clue
 End with ONE short interactive question or mini practice task.
 
 Style rules:
@@ -75,6 +75,42 @@ type GeminiProxyPayload = {
   model: string;
 };
 
+const MOJIBAKE_PATTERN = /(?:Ã.|â.|ðŸ)/;
+
+const MOJIBAKE_EMOJI_MAP: Record<string, string> = {
+  'ðŸ“': '📍',
+  'ðŸ”µ': '🔵',
+  'âœ…': '✅',
+  'âŒ': '❌',
+  'ðŸš«': '❌',
+  'ðŸ”Ž': '🔎',
+  'ðŸ§©': '🧩',
+};
+
+const replaceMojibakeEmojis = (value: string): string => {
+  let output = value;
+  Object.entries(MOJIBAKE_EMOJI_MAP).forEach(([bad, good]) => {
+    output = output.split(bad).join(good);
+  });
+  return output;
+};
+
+const normalizeMojibake = (value: string): string => {
+  let output = replaceMojibakeEmojis(value);
+  if (!MOJIBAKE_PATTERN.test(output)) {
+    return output;
+  }
+
+  try {
+    const bytes = Uint8Array.from(output, (char) => char.charCodeAt(0));
+    output = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch {
+    return output;
+  }
+
+  return replaceMojibakeEmojis(output);
+};
+
 const callGeminiProxy = async (payload: GeminiProxyPayload): Promise<string> => {
   const { data, error } = await supabase.functions.invoke('gemini-proxy', {
     body: payload,
@@ -88,7 +124,7 @@ const callGeminiProxy = async (payload: GeminiProxyPayload): Promise<string> => 
     throw new Error('Empty response from AI service.');
   }
 
-  return data.text;
+  return normalizeMojibake(data.text);
 };
 
 export class DSATutorService {
