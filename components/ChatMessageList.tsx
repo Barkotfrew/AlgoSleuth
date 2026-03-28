@@ -122,14 +122,18 @@ const extractCaseReportSegment = (value: string): { before: string; block: strin
 };
 
 const extractStatsSegment = (value: string): { before: string; block: string; after: string } | null => {
-  const start = findFirstIndex(value, [/^\s*####\s*6[^\n]*Case Stats/im, /^\s*##\s*.*Case Stats/im, /^\s*Resource Analysis/im]);
+  const start = findFirstIndex(value, [
+    /^\s*####\s*6[^\n]*Case Stats/im,
+    /^\s*##\s*.*Case Stats/im,
+    /^\s*(?:📊\s*)?Resource Analysis\b/im,
+  ]);
 
-  const hasComplexityLines = /Time Complexity\s*:/i.test(value) && /Space Complexity\s*:/i.test(value);
+  const hasComplexityLines = /Time Complexity\b/i.test(value) && /Space Complexity\b/i.test(value);
   if (start < 0 && !hasComplexityLines) {
     return null;
   }
 
-  const actualStart = start >= 0 ? start : findFirstIndex(value, [/Time Complexity\s*:/i]);
+  const actualStart = start >= 0 ? start : findFirstIndex(value, [/Time Complexity\b/i]);
   if (actualStart < 0) {
     return null;
   }
@@ -171,9 +175,11 @@ const extractEvidenceSegment = (value: string): { before: string; block: string;
 };
 
 
+const COMPLEXITY_DESCRIPTOR = /^(INSTANT|FAST|LINEAR|HEAVY|SLOW|CRITICAL|UNKNOWN)$/i;
+
 const extractComplexity = (statsBlock: string): { time: string; space: string } | null => {
-  const timeMatch = statsBlock.match(/Time Complexity\s*:\s*([^\n]+)/i);
-  const spaceMatch = statsBlock.match(/Space Complexity\s*:\s*([^\n]+)/i);
+  const timeMatch = statsBlock.match(/Time Complexity\s*:?\s*([^\n]+)/i);
+  const spaceMatch = statsBlock.match(/Space Complexity\s*:?\s*([^\n]+)/i);
 
   if (!timeMatch?.[1] || !spaceMatch?.[1]) {
     const lines = statsBlock
@@ -187,25 +193,42 @@ const extractComplexity = (statsBlock: string): { time: string; space: string } 
         return null;
       }
 
+      let fallback: string | null = null;
       for (let i = labelIndex + 1; i < lines.length; i += 1) {
         const line = lines[i];
         if (/^input size\b/i.test(line)) {
           break;
         }
+        if (COMPLEXITY_DESCRIPTOR.test(line)) {
+          continue;
+        }
+
         const complexityMatch = line.match(/O\([^)]*\)/i);
         if (complexityMatch?.[0]) {
-          return normalizeFieldValue(complexityMatch[0]);
+          let value = normalizeFieldValue(line);
+          if (/^O\([^)]*\)\s*$/i.test(value)) {
+            const nextLine = lines[i + 1];
+            if (
+              nextLine &&
+              !/^input size\b/i.test(nextLine) &&
+              !label.test(nextLine) &&
+              !COMPLEXITY_DESCRIPTOR.test(nextLine)
+            ) {
+              value = `${value} ${normalizeFieldValue(nextLine)}`;
+            }
+          }
+          return value;
         }
-        if (!label.test(line)) {
-          return normalizeFieldValue(line);
+        if (!fallback && !label.test(line)) {
+          fallback = normalizeFieldValue(line);
         }
       }
 
-      return null;
+      return fallback;
     };
 
-    const fallbackTime = findValueAfterLabel(/^Time Complexity\b/i);
-    const fallbackSpace = findValueAfterLabel(/^Space Complexity\b/i);
+    const fallbackTime = findValueAfterLabel(/Time Complexity\b/i);
+    const fallbackSpace = findValueAfterLabel(/Space Complexity\b/i);
 
     if (!fallbackTime || !fallbackSpace) {
       return null;
