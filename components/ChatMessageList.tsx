@@ -176,7 +176,42 @@ const extractComplexity = (statsBlock: string): { time: string; space: string } 
   const spaceMatch = statsBlock.match(/Space Complexity\s*:\s*([^\n]+)/i);
 
   if (!timeMatch?.[1] || !spaceMatch?.[1]) {
-    return null;
+    const lines = statsBlock
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    const findValueAfterLabel = (label: RegExp): string | null => {
+      const labelIndex = lines.findIndex((line) => label.test(line));
+      if (labelIndex < 0) {
+        return null;
+      }
+
+      for (let i = labelIndex + 1; i < lines.length; i += 1) {
+        const line = lines[i];
+        if (/^input size\b/i.test(line)) {
+          break;
+        }
+        const complexityMatch = line.match(/O\([^)]*\)/i);
+        if (complexityMatch?.[0]) {
+          return normalizeFieldValue(complexityMatch[0]);
+        }
+        if (!label.test(line)) {
+          return normalizeFieldValue(line);
+        }
+      }
+
+      return null;
+    };
+
+    const fallbackTime = findValueAfterLabel(/^Time Complexity\b/i);
+    const fallbackSpace = findValueAfterLabel(/^Space Complexity\b/i);
+
+    if (!fallbackTime || !fallbackSpace) {
+      return null;
+    }
+
+    return { time: fallbackTime, space: fallbackSpace };
   }
 
   return {
