@@ -69,8 +69,61 @@ const GraphView = ({ rank, color }: { rank: number; color: string }) => {
   );
 };
 
+const splitComplexityValue = (value: string): { complexity: string; detail: string } => {
+  const match = value.match(/O\([^)]*\)/i);
+  if (!match) {
+    return { complexity: value.trim(), detail: '' };
+  }
+
+  const complexity = match[0];
+  const detailRaw = value.slice((match.index ?? 0) + match[0].length).trim();
+  const detail = detailRaw.replace(/^[-:]\s*/, '').trim();
+
+  return { complexity, detail };
+};
+
+const getFallbackDetail = (label: string, complexity: string): string => {
+  const normalized = complexity.toLowerCase().replace(/\s+/g, '');
+  const isTime = label.toLowerCase().includes('time');
+
+  if (normalized.includes('1')) {
+    return isTime
+      ? 'because it runs in constant time regardless of input size.'
+      : 'as it uses a constant amount of extra memory.';
+  }
+  if (normalized.includes('logn') && !normalized.includes('nlogn')) {
+    return isTime
+      ? 'because the search space is halved each step.'
+      : 'due to recursion or stack depth proportional to log N.';
+  }
+  if (normalized.includes('nlogn')) {
+    return isTime
+      ? 'due to divide-and-conquer with linear work per level.'
+      : 'as it keeps auxiliary data across log N levels.';
+  }
+  if (normalized.includes('n^2') || normalized.includes('n*n')) {
+    return isTime
+      ? 'because it performs nested passes over the input.'
+      : 'as it may store an N by N table.';
+  }
+  if (normalized.includes('2^n') || normalized.includes('n!')) {
+    return isTime
+      ? 'because each element can branch into multiple possibilities.'
+      : 'as it stores exponential combinations.';
+  }
+  if (normalized.includes('n')) {
+    return isTime
+      ? 'where N is the input size, requiring a single pass.'
+      : 'as it stores up to N elements in memory.';
+  }
+
+  return '';
+};
+
 const ComplexityMeter = ({ label, value }: { label: string; value: string }) => {
-  const { rank, color, desc } = getRank(value);
+  const { complexity, detail } = splitComplexityValue(value);
+  const { rank, color, desc } = getRank(complexity);
+  const resolvedDetail = detail || getFallbackDetail(label, complexity);
   const totalSegments = 6;
 
   return (
@@ -83,10 +136,11 @@ const ComplexityMeter = ({ label, value }: { label: string; value: string }) => 
       </div>
 
       <div className="flex items-end gap-2 mb-1">
-        <span className="text-xl font-bold text-white font-mono">{value}</span>
+        <span className="text-xl font-bold text-white font-mono">{complexity}</span>
       </div>
+      {resolvedDetail && <p className="text-[11px] text-gray-400 leading-relaxed font-mono">{resolvedDetail}</p>}
 
-      <div className="flex gap-1 h-1.5 w-full mb-3">
+      <div className="flex gap-1 h-1.5 w-full mb-3 mt-2">
         {[...Array(totalSegments)].map((_, i) => (
           <div
             key={i}

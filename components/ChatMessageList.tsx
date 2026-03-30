@@ -176,71 +176,92 @@ const extractEvidenceSegment = (value: string): { before: string; block: string;
 
 
 const COMPLEXITY_DESCRIPTOR = /^(INSTANT|FAST|LINEAR|HEAVY|SLOW|CRITICAL|UNKNOWN)$/i;
+const stripBulletPrefix = (line: string): string => line.replace(/^[-*]\s+/, '').trim();
 
 const extractComplexity = (statsBlock: string): { time: string; space: string } | null => {
-  const timeMatch = statsBlock.match(/Time Complexity\s*:?\s*([^\n]+)/i);
-  const spaceMatch = statsBlock.match(/Space Complexity\s*:?\s*([^\n]+)/i);
+  const rawLines = statsBlock.split(/\r?\n/);
 
-  if (!timeMatch?.[1] || !spaceMatch?.[1]) {
-    const lines = statsBlock
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-
-    const findValueAfterLabel = (label: RegExp): string | null => {
-      const labelIndex = lines.findIndex((line) => label.test(line));
-      if (labelIndex < 0) {
-        return null;
-      }
-
-      let fallback: string | null = null;
-      for (let i = labelIndex + 1; i < lines.length; i += 1) {
-        const line = lines[i];
-        if (/^input size\b/i.test(line)) {
-          break;
-        }
-        if (COMPLEXITY_DESCRIPTOR.test(line)) {
-          continue;
-        }
-
-        const complexityMatch = line.match(/O\([^)]*\)/i);
-        if (complexityMatch?.[0]) {
-          let value = normalizeFieldValue(line);
-          if (/^O\([^)]*\)\s*$/i.test(value)) {
-            const nextLine = lines[i + 1];
-            if (
-              nextLine &&
-              !/^input size\b/i.test(nextLine) &&
-              !label.test(nextLine) &&
-              !COMPLEXITY_DESCRIPTOR.test(nextLine)
-            ) {
-              value = `${value} ${normalizeFieldValue(nextLine)}`;
-            }
-          }
-          return value;
-        }
-        if (!fallback && !label.test(line)) {
-          fallback = normalizeFieldValue(line);
-        }
-      }
-
-      return fallback;
-    };
-
-    const fallbackTime = findValueAfterLabel(/Time Complexity\b/i);
-    const fallbackSpace = findValueAfterLabel(/Space Complexity\b/i);
-
-    if (!fallbackTime || !fallbackSpace) {
+  const extractSection = (label: RegExp, nextLabel?: RegExp): string[] | null => {
+    const startIndex = rawLines.findIndex((line) => label.test(line));
+    if (startIndex < 0) {
       return null;
     }
 
-    return { time: fallbackTime, space: fallbackSpace };
+    let endIndex = rawLines.length;
+    if (nextLabel) {
+      for (let i = startIndex + 1; i < rawLines.length; i += 1) {
+        if (nextLabel.test(rawLines[i])) {
+          endIndex = i;
+          break;
+        }
+      }
+    }
+
+    return rawLines.slice(startIndex + 1, endIndex);
+  };
+
+  const cleanLine = (line: string): string => stripBulletPrefix(line).replace(/`/g, '').trim();
+
+  const parseSection = (sectionLines: string[]): string | null => {
+    let descriptor: string | null = null;
+
+    for (let i = 0; i < sectionLines.length; i += 1) {
+      const line = cleanLine(sectionLines[i]);
+      if (!line || line === ':') {
+        continue;
+      }
+      if (/^input size\b/i.test(line)) {
+        break;
+      }
+      if (COMPLEXITY_DESCRIPTOR.test(line)) {
+        if (!descriptor) {
+          descriptor = line;
+        }
+        continue;
+      }
+
+      const complexityMatch = line.match(/O\([^)]*\)/i);
+      if (complexityMatch?.[0]) {
+        const matchIndex = complexityMatch.index ?? 0;
+        const suffix = line.slice(matchIndex + complexityMatch[0].length).trim();
+        let value = complexityMatch[0];
+
+        if (suffix) {
+          value = `${value} ${normalizeFieldValue(suffix)}`;
+        } else {
+          const nextLine = sectionLines[i + 1];
+          if (nextLine) {
+            const nextClean = cleanLine(nextLine);
+            if (
+              nextClean &&
+              !/^input size\b/i.test(nextClean) &&
+              !COMPLEXITY_DESCRIPTOR.test(nextClean) &&
+              !/Time Complexity\b/i.test(nextClean) &&
+              !/Space Complexity\b/i.test(nextClean)
+            ) {
+              value = `${value} ${normalizeFieldValue(nextClean)}`;
+            }
+          }
+        }
+
+        return value;
+      }
+    }
+
+    return descriptor ? 'O(?)' : null;
+  };
+
+  const timeSection = extractSection(/Time Complexity\b/i, /Space Complexity\b/i);
+  const spaceSection = extractSection(/Space Complexity\b/i);
+
+  if (!timeSection || !spaceSection) {
+    return null;
   }
 
-  return {
-    time: normalizeFieldValue(timeMatch[1]),
-    space: normalizeFieldValue(spaceMatch[1]),
-  };
+  const time = parseSection(timeSection) ?? 'O(?)';
+  const space = parseSection(spaceSection) ?? 'O(?)';
+
+  return { time, space };
 };
 
 const wrapInvestigationNotes = (html: string): string =>
