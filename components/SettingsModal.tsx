@@ -51,6 +51,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const { logout } = useAuth();
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<DataStatus>(null);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -63,6 +65,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     setStatus(null);
     setProfileStatus(null);
     setDataStatus(null);
+    setDeleteStatus(null);
 
     const loadProfile = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -230,13 +233,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteStatus(null);
+
+    const confirmed = window.confirm(
+      'Delete your account and all associated data? This action is permanent and cannot be undone.'
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeletingAccount(true);
+
+    try {
+      const { error } = await supabase.functions.invoke('delete-account');
+      if (error) {
+        throw error;
+      }
+      setDeleteStatus({ type: 'success', message: 'Account deleted successfully.' });
+      await logout();
+      onClose();
+    } catch (error: any) {
+      setDeleteStatus({ type: 'error', message: error?.message ?? 'Unable to delete account.' });
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   if (!open) {
     return null;
   }
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-[#0b0b0b] border border-[#333] shadow-[0_0_40px_rgba(0,0,0,0.6)]">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[#0b0b0b] border border-[#333] shadow-[0_0_40px_rgba(0,0,0,0.6)] custom-scrollbar">
         <div className="flex items-center justify-between border-b border-[#222] px-5 py-4">
           <div>
             <p className="text-xs font-mono uppercase tracking-[0.35em] text-[#FF3B3B]">Settings</p>
@@ -361,6 +391,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       {logoutError && (
                         <div className="mt-3 text-xs font-mono border border-[#FF3B3B]/50 bg-[#2a0d0d] px-3 py-2 text-red-200">
                           {logoutError}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="border-t border-[#222] pt-4">
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-[#e0e0e0]">Delete account</h4>
+                      <p className="text-xs text-gray-500 font-mono mt-1">Permanently remove your account and all data.</p>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={handleDeleteAccount}
+                          disabled={isDeletingAccount}
+                          className="rounded-sm border border-[#FF3B3B] px-4 py-2 text-xs font-mono uppercase tracking-wider text-[#FF3B3B] hover:bg-[#FF3B3B]/10 disabled:opacity-50"
+                        >
+                          {isDeletingAccount ? 'Deleting...' : 'Delete my account'}
+                        </button>
+                      </div>
+                      {deleteStatus && (
+                        <div
+                          className={`mt-3 text-xs font-mono border px-3 py-2 ${
+                            deleteStatus.type === 'success'
+                              ? 'border-green-500/40 bg-green-900/20 text-green-300'
+                              : 'border-[#FF3B3B]/50 bg-[#2a0d0d] text-red-200'
+                          }`}
+                        >
+                          {deleteStatus.message}
                         </div>
                       )}
                     </div>
