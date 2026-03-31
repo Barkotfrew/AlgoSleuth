@@ -781,54 +781,6 @@ Details: ${errorMessage}`;
   }
 
   if (!booted) return <BootScreen onComplete={() => setBooted(true)} />;
-  const timelineItems = [
-    {
-      title: 'Arrays & Hashing',
-      alias: 'FINGERPRINT ANALYSIS',
-      status: 'SOLVED',
-      desc: 'Identify duplicates and map suspect relations.',
-      color: 'text-green-500',
-      borderClass: 'border-green-500',
-      hoverClass: 'hover:border-green-500',
-    },
-    {
-      title: 'Two Pointers',
-      alias: 'TRAJECTORY TRACKING',
-      status: 'IN PROGRESS',
-      desc: 'Track movement from multiple angles simultaneously.',
-      color: 'text-[#FFD700]',
-      borderClass: 'border-[#FFD700]',
-      hoverClass: 'hover:border-[#FFD700]',
-    },
-    {
-      title: 'Sliding Window',
-      alias: 'SURVEILLANCE FRAME',
-      status: 'PENDING',
-      desc: 'Analyze data streams in real-time segments.',
-      color: 'text-gray-500',
-      borderClass: 'border-gray-700',
-      hoverClass: 'hover:border-gray-500',
-    },
-    {
-      title: 'Binary Search',
-      alias: 'SUSPECT ELIMINATION',
-      status: 'PENDING',
-      desc: 'Divide and conquer suspect lists efficiently.',
-      color: 'text-gray-500',
-      borderClass: 'border-gray-700',
-      hoverClass: 'hover:border-gray-500',
-    },
-    {
-      title: 'Graphs',
-      alias: 'NETWORK MAPPING',
-      status: 'LOCKED',
-      desc: 'Uncover hidden connections in complex networks.',
-      color: 'text-red-900',
-      borderClass: 'border-red-900',
-      hoverClass: '',
-    },
-  ];
-
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg)] text-[var(--app-text)] overflow-hidden font-sans selection:bg-[var(--accent-color)] selection:text-white crt relative">
       <div
@@ -1167,49 +1119,37 @@ Details: ${errorMessage}`;
               {activeTab === 'TIMELINE' && (
                 <div className="max-w-4xl mx-auto">
                   <div className="flex items-center gap-3 mb-8 border-b border-[#333] pb-4">
-                        <span className="text-3xl">📅</span>
-                    <span className="text-3xl"></span>
+                    <span className="text-3xl">📅</span>
                     <div>
                       <h2 className="text-xl font-bold text-[#FFD700] tracking-widest uppercase">Investigation Roadmap</h2>
                       <p className="text-xs text-gray-500 font-mono">MASTER THE ALGORITHMS TO CLOSE ALL CASES</p>
                     </div>
                   </div>
 
-                  <div className="relative border-l-2 border-[#333] ml-4 md:ml-10 space-y-12 py-4">
-                    {timelineItems.map((item, idx) => (
-                      <div key={idx} className="relative pl-8 md:pl-12 group">
-                        <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#050505] border-2 ${item.status === 'SOLVED' ? 'border-green-500 bg-green-500/20' : item.status === 'IN PROGRESS' ? 'border-[#FFD700] animate-pulse' : 'border-[#333]'}`}></div>
+                  <div className="relative overflow-hidden border border-[#333] bg-[#0a0a0a] p-8 sm:p-10 rounded-sm text-center">
+                    <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(255,215,0,0.2), transparent 45%), radial-gradient(circle at 80% 0%, rgba(255,59,59,0.15), transparent 40%)' }} />
+                    <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FFD700] to-transparent opacity-70 animate-[shimmer_2s_infinite]" />
+                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#FF3B3B] to-transparent opacity-50" />
+                    <div className="absolute -right-10 -top-10 w-32 h-32 border border-[#333] rotate-12 opacity-30" />
+                    <div className="absolute -left-10 -bottom-10 w-24 h-24 border border-[#333] -rotate-6 opacity-30" />
 
-                        <div
-                          className={`bg-[#141414] border p-4 sm:p-6 rounded-sm relative overflow-hidden transition-all duration-300 hover:translate-x-2 ${
-                            item.status === 'LOCKED' ? 'border-[#333] opacity-50' : `${item.borderClass} ${item.hoverClass}`
-                          }`}
-                        >
-                          {item.status === 'IN PROGRESS' && (
-                            <div className="absolute top-0 right-0 px-2 py-1 bg-[#FFD700] text-black text-[10px] font-bold font-mono">
-                              ACTIVE CASE
-                            </div>
-                          )}
-                          {item.status === 'SOLVED' && (
-                            <div className="absolute top-0 right-0 px-2 py-1 bg-green-900 text-green-300 text-[10px] font-bold font-mono">
-                              CASE CLOSED
-                            </div>
-                          )}
-
-                          <h3
-                            className={`text-lg font-bold font-mono uppercase mb-1 ${
-                              item.status === 'LOCKED' ? 'text-gray-700' : 'text-[#e0e0e0]'
-                            }`}
-                          >
-                            {item.title}
-                          </h3>
-                          <div className="text-[10px] text-[#FF3B3B] uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
-                            <span className="w-1 h-1 bg-[#FF3B3B] rounded-full"></span> {item.alias}
-                          </div>
-                          <p className="text-sm text-gray-500 font-mono">{item.desc}</p>
-                        </div>
+                    <div className="relative z-10 flex flex-col items-center gap-4">
+                      <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.4em] text-[#FF3B3B]">
+                        <span className="w-2 h-2 rounded-full bg-[#FF3B3B] animate-pulse" />
+                        Timeline Update
                       </div>
-                    ))}
+                      <h3 className="text-2xl sm:text-3xl font-bold text-[#FFD700] tracking-widest uppercase">Coming Soon</h3>
+                      <p className="text-sm text-gray-400 font-mono leading-relaxed max-w-xl">
+                        We are finalizing the live investigation timeline. Expect real-time case progress, milestones, and unlockable
+                        missions to appear here.
+                      </p>
+
+                      <div className="mt-2 flex flex-wrap items-center justify-center gap-3 text-[10px] font-mono uppercase tracking-wider text-gray-500">
+                        <span className="border border-[#333] px-3 py-1 rounded-sm bg-black/40">Realtime Feed</span>
+                        <span className="border border-[#333] px-3 py-1 rounded-sm bg-black/40">Milestones</span>
+                        <span className="border border-[#333] px-3 py-1 rounded-sm bg-black/40">Unlockables</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
