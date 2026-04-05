@@ -245,7 +245,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     setIsDeletingAccount(true);
 
     try {
-      const { error } = await supabase.functions.invoke('delete-account');
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error('Session expired. Please sign in again and retry.');
+      }
+
+      const { error } = await supabase.functions.invoke('delete-account', {
+        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+      });
       if (error) {
         throw error;
       }
