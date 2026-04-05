@@ -251,7 +251,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       }
 
       const accessToken = sessionData.session.access_token;
-      const { error } = await supabase.functions.invoke('delete-account', {
+      const { data, error } = await supabase.functions.invoke('delete-account', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'X-User-Token': accessToken,
@@ -260,8 +260,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       if (error) {
         throw error;
       }
-      setDeleteStatus({ type: 'success', message: 'Account deleted successfully.' });
-      await logout();
+      if (data && data.emailSent === false) {
+        setDeleteStatus({
+          type: 'success',
+          message: data.emailError
+            ? `Account deleted. Confirmation email failed: ${data.emailError}`
+            : 'Account deleted. Confirmation email failed to send.',
+        });
+      } else {
+        setDeleteStatus({ type: 'success', message: 'Account deleted successfully. A confirmation email was sent.' });
+      }
+      await supabase.auth.signOut({ scope: 'local' });
       onClose();
     } catch (error: any) {
       setDeleteStatus({ type: 'error', message: error?.message ?? 'Unable to delete account.' });
