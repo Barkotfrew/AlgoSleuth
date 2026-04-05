@@ -250,8 +250,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         throw new Error('Session expired. Please sign in again and retry.');
       }
 
+      const accessToken = sessionData.session.access_token;
       const { error } = await supabase.functions.invoke('delete-account', {
-        headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'X-User-Token': accessToken,
+        },
       });
       if (error) {
         throw error;

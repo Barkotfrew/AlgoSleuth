@@ -22,8 +22,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.replace("Bearer ", "");
+    const rawAuthHeader = req.headers.get("Authorization") ?? "";
+    const rawToken = req.headers.get("X-User-Token") ?? req.headers.get("x-user-token") ?? rawAuthHeader;
+    const token = rawToken.replace(/^Bearer\s+/i, "");
     if (!token) {
       return new Response(JSON.stringify({ error: "Missing auth token." }), {
         status: 401,
