@@ -19,7 +19,6 @@ type ProfileStatus = { type: 'success' | 'error'; message: string } | null;
 type DataStatus = { type: 'success' | 'error'; message: string } | null;
 
 const tabs: SettingsTab[] = ['Account', 'Security', 'Preferences'];
-const themeOptions: ThemePreference[] = ['Dark', 'Light', 'System'];
 const fontOptions: FontSizePreference[] = ['Small', 'Medium', 'Large'];
 const accentOptions: { value: AccentColorPreference; label: string; swatch: string }[] = [
   { value: 'Yellow', label: 'Yellow', swatch: '#FFD700' },
@@ -490,21 +489,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                  <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
-                    Theme
-                    <select
-                      value={appearance.theme}
-                      onChange={(event) => handleAppearanceChange({ theme: event.target.value as ThemePreference })}
-                      className="mt-2 w-full border border-[#333] bg-[#0a0a0a] p-3 text-sm text-[#e0e0e0] focus:border-[#FFD700] focus:outline-none"
-                    >
-                      {themeOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
                   <label className="text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B]">
                     Font size
                     <select
