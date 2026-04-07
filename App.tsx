@@ -898,9 +898,20 @@ Details: ${errorMessage}`;
       <main className="flex-1 flex flex-col min-h-0 relative z-10 scan-line">
         {!sessionStarted ? (
           <div className="flex-1 overflow-y-auto relative bg-[#0e0e0e]/80">
-<div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80">
-              <div className="animate-[marquee_20s_linear_infinite] whitespace-nowrap">
-                CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY // CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //
+<div className="sticky top-0 z-20 w-full h-6 bg-[#FFD700] text-black font-black font-mono text-xs flex items-center overflow-hidden border-b-2 border-black opacity-80 tape-rail">
+              <div className="tape-marquee" aria-hidden="true">
+                <div className="tape-set">
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                </div>
+                <div className="tape-set">
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                  <span>CRIME SCENE DO NOT CROSS // EVIDENCE DETECTED // AUTHORIZED PERSONNEL ONLY //</span>
+                </div>
               </div>
             </div>
 
