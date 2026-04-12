@@ -805,8 +805,6 @@ Details: ${errorMessage}`;
       <HomePage
         onGetStarted={() => {
           window.location.hash = '#/app';
-          setAuthView('login');
-          setShowAuthGate(true);
           setRoute('app');
         }}
       />
