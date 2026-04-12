@@ -10,6 +10,7 @@ const isValidEmail = (value: string): boolean => /\S+@\S+\.\S+/.test(value);
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const { register } = useAuth();
+  const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,8 +20,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(
-    () => email.trim().length > 0 && password.length > 0 && confirmPassword.length > 0,
-    [email, password, confirmPassword]
+    () => displayName.trim().length > 0 && email.trim().length > 0 && password.length > 0 && confirmPassword.length > 0,
+    [displayName, email, password, confirmPassword]
   );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -29,6 +30,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     setSuccessMessage(null);
 
     const normalizedEmail = email.trim();
+    const normalizedName = displayName.trim();
+
+    if (!normalizedName) {
+      setError('Enter your name.');
+      return;
+    }
 
     if (!isValidEmail(normalizedEmail)) {
       setError('Enter a valid email address.');
@@ -48,7 +55,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     setIsSubmitting(true);
 
     try {
-      const result = await register(normalizedEmail, password, rememberMe);
+      const result = await register(normalizedEmail, password, rememberMe, normalizedName);
       if (result.needsEmailVerification) {
         setSuccessMessage('Registration successful. Check your email to confirm your account.');
       }
@@ -62,6 +69,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label htmlFor="register-name" className="block text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B] mb-2">
+          Agent Name
+        </label>
+        <input
+          id="register-name"
+          type="text"
+          value={displayName}
+          onChange={(event) => setDisplayName(event.target.value)}
+          placeholder="Detective name"
+          className="w-full rounded-sm border border-[#333] bg-[#050505] px-4 py-3 text-sm text-gray-200 outline-none focus:border-[#FFD700]"
+          autoComplete="name"
+        />
+      </div>
+
       <div>
         <label htmlFor="register-email" className="block text-xs font-mono uppercase tracking-[0.2em] text-[#FF3B3B] mb-2">
           Agent Email
