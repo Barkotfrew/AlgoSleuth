@@ -6,6 +6,7 @@ import ChatMessageList from './components/ChatMessageList';
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
 import SettingsModal from './components/SettingsModal';
+import HomePage from './components/HomePage';
 import { loadCases, loadCaseMessages, saveCaseMessage, clearEvidenceHistory, deleteCaseById, CaseRecord, CaseMessageRecord } from './services/evidence';
 import { useAuth } from './contexts/AuthContext';
 
@@ -115,6 +116,13 @@ const applyAppearanceSettings = (settings: AppearanceSettings): void => {
   root.style.setProperty('--accent-color', accentTokens.color);
   root.style.setProperty('--accent-soft', accentTokens.soft);
   root.style.fontSize = FONT_SIZES[settings.fontSize];
+};
+
+const resolveRoute = (): 'home' | 'app' => {
+  if (typeof window === 'undefined') {
+    return 'home';
+  }
+  return window.location.hash === '#/app' ? 'app' : 'home';
 };
 
 const loadAppearanceSettings = (): AppearanceSettings => {
@@ -355,6 +363,7 @@ const App: React.FC = () => {
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const [lastWarnedCount, setLastWarnedCount] = useState<number | null>(null);
   const [booted, setBooted] = useState(false);
+  const [route, setRoute] = useState<'home' | 'app'>(() => resolveRoute());
   const [appearance, setAppearance] = useState<AppearanceSettings>(() => loadAppearanceSettings());
   const [showSettings, setShowSettings] = useState(false);
   const [sessionStarted, setSessionStarted] = useState(false);
@@ -421,6 +430,15 @@ const App: React.FC = () => {
       window.localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
     }
   }, [appearance]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const handleHashChange = () => setRoute(resolveRoute());
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   useEffect(() => {
     if (appearance.theme !== 'System' || typeof window === 'undefined' || !window.matchMedia) {
@@ -781,6 +799,19 @@ Details: ${errorMessage}`;
   }
 
   if (!booted) return <BootScreen onComplete={() => setBooted(true)} />;
+
+  if (route === 'home') {
+    return (
+      <HomePage
+        onGetStarted={() => {
+          window.location.hash = '#/app';
+          setAuthView('login');
+          setShowAuthGate(true);
+          setRoute('app');
+        }}
+      />
+    );
+  }
   return (
     <div className="flex flex-col h-screen bg-[var(--app-bg)] text-[var(--app-text)] overflow-hidden font-sans selection:bg-[var(--accent-color)] selection:text-white crt relative">
       <div

@@ -110,6 +110,20 @@
             animation: pulse-glow 3s infinite;
         }
 
+        @keyframes caret-blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .typing-caret {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            margin-left: 6px;
+            background: var(--accent-color, #FFD700);
+            animation: caret-blink 0.9s steps(2, start) infinite;
+            vertical-align: -2px;
+        }
+
         /* Crime Tape Marquee */
         @keyframes tape-marquee {
             0% { transform: translate3d(0, 0, 0); }
