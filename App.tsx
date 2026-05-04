@@ -281,6 +281,18 @@ const BootScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
+const LandingLoader = () => (
+  <div className="fixed inset-0 z-[120] flex flex-col items-center justify-center bg-black text-[#FFD700] font-mono">
+    <p className="text-xs uppercase tracking-[0.4em] text-[#FF3B3B] mb-3">Initializing Access</p>
+    <div className="flex items-center gap-2">
+      <span className="h-2 w-2 rounded-full bg-[#FFD700] animate-pulse" />
+      <span className="h-2 w-2 rounded-full bg-[#FFD700] animate-pulse delay-75" />
+      <span className="h-2 w-2 rounded-full bg-[#FFD700] animate-pulse delay-150" />
+    </div>
+    <p className="mt-4 text-[10px] uppercase tracking-[0.3em] text-gray-500">Securing console feed...</p>
+  </div>
+);
+
 type AuthView = 'login' | 'register';
 
 interface AuthScreenProps {
@@ -362,6 +374,8 @@ const App: React.FC = () => {
   const [guestUsageCount, setGuestUsageCount] = useState(0);
   const [showGuestWarning, setShowGuestWarning] = useState(false);
   const [lastWarnedCount, setLastWarnedCount] = useState<number | null>(null);
+  const [landingReady, setLandingReady] = useState(true);
+  const [showTransitionLoader, setShowTransitionLoader] = useState(false);
   const [booted, setBooted] = useState(false);
   const [route, setRoute] = useState<'home' | 'app'>(() => resolveRoute());
   const [appearance, setAppearance] = useState<AppearanceSettings>(() => loadAppearanceSettings());
@@ -802,12 +816,19 @@ Details: ${errorMessage}`;
 
   if (route === 'home') {
     return (
-      <HomePage
-        onGetStarted={() => {
-          window.location.hash = '#/app';
-          setRoute('app');
-        }}
-      />
+      <>
+        {showTransitionLoader && <LandingLoader />}
+        <HomePage
+          onGetStarted={() => {
+            setShowTransitionLoader(true);
+            setTimeout(() => {
+              window.location.hash = '#/app';
+              setRoute('app');
+              setShowTransitionLoader(false);
+            }, 900);
+          }}
+        />
+      </>
     );
   }
   return (
