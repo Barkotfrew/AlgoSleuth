@@ -33,7 +33,7 @@ interface GuestCaseRecord {
 
 const GUEST_CASES_KEY = 'dsa_guest_cases';
 const GUEST_USAGE_KEY = 'dsa_guest_usage_count';
-const GUEST_TRY_LIMIT = 5;
+const GUEST_TRY_LIMIT = 3;
 const APPEARANCE_STORAGE_KEY = 'algosleuth_appearance';
 
 const DEFAULT_APPEARANCE: AppearanceSettings = {
