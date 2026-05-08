@@ -211,4 +211,4 @@ AlgoSleuth is intentionally not a generic coding dashboard. The interface uses a
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](</C:/Users/ASUS/Desktop/AlgoSeuth - Copy/AlgoSleuth/LICENSE>) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
