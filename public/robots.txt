@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://algosleuth.me/sitemap.xml
+Sitemap: https://www.algosleuth.me/sitemap.xml
